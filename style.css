@@ -100,9 +100,9 @@ body {
 }
 
 .hud-ring {
-  width: 470px;
-  height: 470px;
-  margin: 0 auto 35px;
+  width: 560px;
+  height: 560px;
+  margin: 0 auto;
   border-radius: 50%;
   border: 2px solid rgba(0, 210, 255, 0.5);
   box-shadow:
@@ -111,38 +111,30 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  animation: rotateHud 14s linear infinite;
 }
-
-.inner-ring {
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  border: 3px solid white;
+.hud-content {
+  width: 82%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  animation: counterRotate 14s linear infinite;
+  justify-content: center;
 }
 
-.inner-ring span {
-  font-size: 29px;
-  letter-spacing: 8px;
-  color: white;
+.hud-content h1 {
+  font-size: 34px;
+  letter-spacing: 6px;
+  color: #67eaff;
+  margin-bottom: 12px;
 }
 
-@keyframes rotateHud {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes counterRotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-360deg); }
+.hud-content p {
+  color: #d8d8d8;
+  font-size: 22px;
+  margin-bottom: 26px;
 }
 
 .center-panel h1 {
-  font-size: 34px;
+  font-size: 29px;
   letter-spacing: 6px;
   color: #67eaff;
   margin-bottom: 12px;
