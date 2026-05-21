@@ -98,7 +98,7 @@ async function sendMessage() {
   const reply = await askJarvis(message);
 
   responseBox.innerText = reply;
-  listenStatus.innerText = "System Ready";
+  listenStatus.innerText = "System Active";
 
   speak(reply);
 
@@ -141,13 +141,13 @@ if (SpeechRecognition) {
 
   recognition.onend = () => {
     if (listenStatus.innerText === "Listening...") {
-      listenStatus.innerText = "System Ready";
+      listenStatus.innerText = "System Active";
     }
   };
 } else {
   micBtn.disabled = true;
   micBtn.innerText = "NO MIC";
-}
+} 
 
 document.querySelectorAll(".quick-grid button").forEach((button) => {
   button.addEventListener("click", () => {
@@ -173,9 +173,58 @@ document.querySelectorAll(".quick-grid button").forEach((button) => {
       window.open("https://www.netflix.com", "_blank");
     }
 
-    if (action === "notes") {
-      responseBox.innerText = "Notes module will be added later.";
-      speak("Notes module will be added later.");
-    }
+    if (action === "swiggy") {
+  window.open("https://www.swiggy.com", "_blank");
+  responseBox.innerText = "Opening Swiggy.";
+     speak("Opening Swiggy.");
+}
   });
 });
+ async function updateSystemStatus() {
+  try {
+    const res = await fetch("/status");
+    const data = await res.json();
+
+    const cpu = data.cpu ?? 0;
+    const ram = data.ram ?? 0;
+
+    document.getElementById("cpuText").innerText = cpu + "%";
+    document.getElementById("cpuBar").style.width = cpu + "%";
+
+    document.getElementById("ramText").innerText = ram + "%";
+    document.getElementById("ramBar").style.width = ram + "%";
+  } catch (error) {
+    document.getElementById("cpuText").innerText = "ERR";
+    document.getElementById("ramText").innerText = "ERR";
+  }
+}
+
+async function updateBatteryStatus() {
+  try {
+    if ("getBattery" in navigator) {
+      const battery = await navigator.getBattery();
+
+      function setBattery() {
+        const percent = Math.round(battery.level * 100);
+
+        document.getElementById("batteryText").innerText = percent + "%";
+        document.getElementById("batteryBar").style.width = percent + "%";
+      }
+
+      setBattery();
+
+      battery.addEventListener("levelchange", setBattery);
+      battery.addEventListener("chargingchange", setBattery);
+    } else {
+      document.getElementById("batteryText").innerText = "N/A";
+      document.getElementById("batteryBar").style.width = "0%";
+    }
+  } catch (error) {
+    document.getElementById("batteryText").innerText = "N/A";
+    document.getElementById("batteryBar").style.width = "0%";
+  }
+}
+
+setInterval(updateSystemStatus, 3000);
+updateSystemStatus();
+updateBatteryStatus();

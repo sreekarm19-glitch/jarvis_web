@@ -115,10 +115,10 @@ body {
 }
 
 .inner-ring {
-  width: 230px;
-  height: 230px;
+  width: 260px;
+  height: 260px;
   border-radius: 50%;
-  border: 4px solid white;
+  border: 3px solid white;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -126,7 +126,7 @@ body {
 }
 
 .inner-ring span {
-  font-size: 34px;
+  font-size: 29px;
   letter-spacing: 8px;
   color: white;
 }

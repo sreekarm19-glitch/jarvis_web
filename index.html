@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JARVIS AI</title>
+  <title>JARVIS</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -38,7 +38,7 @@
         </div>
       </div>
 
-      <h1>HELLO, SREEKAR</h1>
+      <h1>HELLO</h1>
       <p>How can I help you today?</p>
 
       <div class="chat-bar">
@@ -57,27 +57,34 @@
       <p id="date">Loading...</p>
     </div>
 
-    <div class="card">
-      <h3>SYSTEM STATUS</h3>
+<div class="card">
+  <h3>SYSTEM STATUS</h3>
 
-      <div class="stat">
-        <span>CPU</span>
-        <div class="bar"><div style="width:23%"></div></div>
-        <b>23%</b>
-      </div>
-
-      <div class="stat">
-        <span>RAM</span>
-        <div class="bar"><div style="width:45%"></div></div>
-        <b>45%</b>
-      </div>
-
-      <div class="stat">
-        <span>BATTERY</span>
-        <div class="bar"><div style="width:87%"></div></div>
-        <b>87%</b>
-      </div>
+  <div class="stat">
+    <span>CPU</span>
+    <div class="bar">
+      <div id="cpuBar" style="width:0%"></div>
     </div>
+    <b id="cpuText">0%</b>
+  </div>
+
+  <div class="stat">
+    <span>RAM</span>
+    <div class="bar">
+      <div id="ramBar" style="width:0%"></div>
+    </div>
+    <b id="ramText">0%</b>
+  </div>
+
+  <div class="stat">
+    <span>BATTERY</span>
+    <div class="bar">
+      <div id="batteryBar" style="width:0%"></div>
+    </div>
+    <b id="batteryText">...</b>
+  </div>
+</div>
+    
 
     <div class="card">
       <h3>QUICK ACCESS</h3>
@@ -86,7 +93,7 @@
         <button data-action="google">Web Search</button>
         <button data-action="youtube">YouTube</button>
         <button data-action="netflix">Netflix</button>
-        <button data-action="notes">Notes</button>
+        <button data-action="swiggy">Swiggy</button>
         <button data-action="weather">Weather</button>
         <button data-action="calculator">Calculator</button>
       </div>
