@@ -155,22 +155,32 @@ document.querySelectorAll(".quick-grid button").forEach((button) => {
 
     if (action === "google") {
       window.open("https://google.com", "_blank");
+    responseBox.innerText = "Opening Google.";
+     speak("Opening Google.");
     }
 
     if (action === "youtube") {
       window.open("https://youtube.com", "_blank");
+    responseBox.innerText = "Opening YouTube.";
+     speak("Opening YouTube.");
     }
 
     if (action === "weather") {
       window.open("https://www.google.com/search?q=weather", "_blank");
+    responseBox.innerText = "Opening Weather.";
+     speak("Opening Weather.");
     }
 
     if (action === "calculator") {
       window.open("https://www.google.com/search?q=calculator", "_blank");
+    responseBox.innerText = "Opening Calculator.";
+     speak("Opening Calculator.");
     }
 
     if (action === "netflix") {
       window.open("https://www.netflix.com", "_blank");
+    responseBox.innerText = "Opening Netflix.";
+     speak("Opening Netflix.");
     }
 
     if (action === "swiggy") {
