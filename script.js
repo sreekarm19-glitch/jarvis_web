@@ -98,9 +98,12 @@ async function sendMessage() {
   const reply = await askJarvis(message);
 
   responseBox.innerText = reply;
-  listenStatus.innerText = "System Active";
+listenStatus.innerText = "System Active";
 
-  speak(reply);
+const shortAnswer = makeShortForGlasses(reply);
+console.log("OLED short answer:", shortAnswer);
+
+speak(reply);
 
   input.value = "";
 }
@@ -238,3 +241,42 @@ async function updateBatteryStatus() {
 setInterval(updateSystemStatus, 3000);
 updateSystemStatus();
 updateBatteryStatus();
+
+function makeShortForGlasses(text) {
+  if (!text) return "No response.";
+
+  let clean = text
+    .replace(/\*/g, "")
+    .replace(/#/g, "")
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // If answer is already short, keep it
+  if (clean.length <= 80) {
+    return clean;
+  }
+
+  // Take first 1-2 useful sentences
+  const sentences = clean
+    .split(/[.!?]/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  let shortText = "";
+
+  if (sentences.length >= 2) {
+    shortText = sentences[0] + ". " + sentences[1] + ".";
+  } else if (sentences.length === 1) {
+    shortText = sentences[0] + ".";
+  } else {
+    shortText = clean;
+  }
+
+  // OLED limit
+  if (shortText.length > 90) {
+    shortText = shortText.substring(0, 87).trim() + "...";
+  }
+
+  return shortText;
+}
