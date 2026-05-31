@@ -31,22 +31,23 @@
 
   <main class="main">
 
-<section class="center-panel">
-  <div class="hud-ring">
-    <div class="hud-content">
-      <h1>HELLO</h1>
-      <p>How can I help you today?</p>
+    <section class="center-panel">
+      <div class="hud-ring">
+        <div class="hud-content">
+          <h1>HELLO</h1>
+          <p>How can I help you today?</p>
 
-      <div class="chat-bar">
-        <input id="commandInput" type="text" placeholder="Ask me anything..." />
-        <button id="micBtn">MIC</button>
-        <button id="sendBtn">SEND</button>
+          <div class="chat-bar">
+            <input id="commandInput" type="text" placeholder="Ask me anything..." />
+            <button id="micBtn">MIC</button>
+            <button id="sendBtn">SEND</button>
+          </div>
+
+          <div id="responseBox">JARVIS online. Awaiting command...</div>
+        </div>
       </div>
+    </section>
 
-      <div id="responseBox">JARVIS online. Awaiting command...</div>
-    </div>
-  </div>
-</section>
   </main>
 
   <aside class="right-panel">
@@ -55,34 +56,33 @@
       <p id="date">Loading...</p>
     </div>
 
-<div class="card">
-  <h3>SYSTEM STATUS</h3>
+    <div class="card">
+      <h3>SYSTEM STATUS</h3>
 
-  <div class="stat">
-    <span>CPU</span>
-    <div class="bar">
-      <div id="cpuBar" style="width:0%"></div>
-    </div>
-    <b id="cpuText">0%</b>
-  </div>
+      <div class="stat">
+        <span>CPU</span>
+        <div class="bar">
+          <div id="cpuBar" style="width:0%"></div>
+        </div>
+        <b id="cpuText">0%</b>
+      </div>
 
-  <div class="stat">
-    <span>RAM</span>
-    <div class="bar">
-      <div id="ramBar" style="width:0%"></div>
-    </div>
-    <b id="ramText">0%</b>
-  </div>
+      <div class="stat">
+        <span>RAM</span>
+        <div class="bar">
+          <div id="ramBar" style="width:0%"></div>
+        </div>
+        <b id="ramText">0%</b>
+      </div>
 
-  <div class="stat">
-    <span>BATTERY</span>
-    <div class="bar">
-      <div id="batteryBar" style="width:0%"></div>
+      <div class="stat">
+        <span>BATTERY</span>
+        <div class="bar">
+          <div id="batteryBar" style="width:0%"></div>
+        </div>
+        <b id="batteryText">...</b>
+      </div>
     </div>
-    <b id="batteryText">...</b>
-  </div>
-</div>
-    
 
     <div class="card">
       <h3>QUICK ACCESS</h3>
@@ -94,8 +94,19 @@
         <button data-action="swiggy">Swiggy</button>
         <button data-action="weather">Weather</button>
         <button data-action="calculator">Calculator</button>
+        <button id="connectGlassesBtn">Connect Glasses</button>
       </div>
     </div>
+
+    <div class="card">
+      <h3>VIRTUAL GLASSES OLED</h3>
+
+      <div class="virtual-oled" id="virtualOled">
+        E.D.I.T.H ONLINE<br>
+        Awaiting command...
+      </div>
+    </div>
+
   </aside>
 
 </div>

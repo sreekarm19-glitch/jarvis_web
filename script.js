@@ -103,6 +103,8 @@ listenStatus.innerText = "System Active";
 const shortAnswer = makeShortForGlasses(reply);
 console.log("OLED short answer:", shortAnswer);
 
+await sendToGlasses(shortAnswer);
+
 speak(reply);
 
   input.value = "";
@@ -279,4 +281,56 @@ function makeShortForGlasses(text) {
   }
 
   return shortText;
+}
+let glassesDevice = null;
+let glassesCharacteristic = null;
+
+const EDITH_SERVICE_UUID = "d7f37c01-4f4a-4f5a-9f66-edith0000001";
+const EDITH_CHARACTERISTIC_UUID = "d7f37c02-4f4a-4f5a-9f66-edith0000002";
+
+async function connectGlasses() {
+  try {
+    responseBox.innerText = "Searching for E.D.I.T.H glasses...";
+    listenStatus.innerText = "Connecting...";
+
+    glassesDevice = await navigator.bluetooth.requestDevice({
+      filters: [{ name: "EDITH_GLASSES" }],
+      optionalServices: [EDITH_SERVICE_UUID]
+    });
+
+    const server = await glassesDevice.gatt.connect();
+    const service = await server.getPrimaryService(EDITH_SERVICE_UUID);
+    glassesCharacteristic = await service.getCharacteristic(EDITH_CHARACTERISTIC_UUID);
+
+    responseBox.innerText = "E.D.I.T.H glasses connected.";
+    listenStatus.innerText = "Glasses Connected";
+
+    speak("E.D.I.T.H glasses connected.");
+  } catch (error) {
+    console.error(error);
+    responseBox.innerText = "Could not connect to glasses. Use Chrome and turn on Bluetooth.";
+    listenStatus.innerText = "Connection Failed";
+  }
+}
+
+async function sendToGlasses(text) {
+  if (!glassesCharacteristic) {
+    console.log("Glasses not connected. Short answer:", text);
+    return;
+  }
+
+  try {
+    const encoder = new TextEncoder();
+    await glassesCharacteristic.writeValue(encoder.encode(text));
+    console.log("Sent to glasses:", text);
+  } catch (error) {
+    console.error("Glasses send error:", error);
+    responseBox.innerText += "\n\nGlasses disconnected. Reconnect glasses.";
+  }
+}
+
+const connectBtn = document.getElementById("connectGlassesBtn");
+
+if (connectBtn) {
+  connectBtn.addEventListener("click", connectGlasses);
 }
