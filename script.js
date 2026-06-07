@@ -3,6 +3,11 @@ const responseBox = document.getElementById("responseBox");
 const micBtn = document.getElementById("micBtn");
 const sendBtn = document.getElementById("sendBtn");
 const listenStatus = document.getElementById("listenStatus");
+const muteBtn = document.getElementById("muteBtn");
+
+let isMuted = false;
+let isProcessing = false;
+let isListening = false;
 
 function updateClock() {
   const now = new Date();
@@ -18,17 +23,54 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
+let jarvisVoices = [];
+
+function loadVoices() {
+  jarvisVoices = speechSynthesis.getVoices();
+}
+
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
 function speak(text) {
+  if (isMuted) return;
+
   speechSynthesis.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 1;
-  utterance.pitch = 1;
+
+  const preferredVoice =
+    jarvisVoices.find(voice => voice.name.toLowerCase().includes("daniel")) ||
+    jarvisVoices.find(voice => voice.name.toLowerCase().includes("google uk english male")) ||
+    jarvisVoices.find(voice => voice.name.toLowerCase().includes("microsoft david")) ||
+    jarvisVoices.find(voice => voice.name.toLowerCase().includes("male")) ||
+    jarvisVoices.find(voice => voice.lang.includes("en"));
+
+  if (preferredVoice) {
+    utterance.voice = preferredVoice;
+  }
+
+  utterance.rate = 0.92;
+  utterance.pitch = 0.75;
   utterance.volume = 1;
 
   speechSynthesis.speak(utterance);
 }
 
+if (muteBtn) {
+  muteBtn.addEventListener("click", () => {
+    isMuted = !isMuted;
+
+    if (isMuted) {
+      speechSynthesis.cancel();
+      muteBtn.innerText = "UNMUTE";
+      listenStatus.innerText = "Muted";
+    } else {
+      muteBtn.innerText = "MUTE";
+      listenStatus.innerText = "System Active";
+    }
+  });
+}
 async function askJarvis(message) {
   const lower = message.toLowerCase();
   
@@ -88,9 +130,15 @@ return "I could not get a proper response from the AI server.";
 }
 
 async function sendMessage() {
+  if (isProcessing) return;
+
   const message = input.value.trim();
 
   if (!message) return;
+
+  isProcessing = true;
+
+  speechSynthesis.cancel();
 
   responseBox.innerText = "Thinking...";
   listenStatus.innerText = "Processing...";
@@ -98,16 +146,19 @@ async function sendMessage() {
   const reply = await askJarvis(message);
 
   responseBox.innerText = reply;
-listenStatus.innerText = "System Active";
+  listenStatus.innerText = "System Active";
 
-const shortAnswer = makeShortForGlasses(reply);
-console.log("OLED short answer:", shortAnswer);
+  const shortAnswer = makeShortForGlasses(reply);
+  console.log("OLED short answer:", shortAnswer);
 
-await sendToGlasses(shortAnswer);
+  if (typeof sendToVirtualOled === "function") {
+    sendToVirtualOled(reply);
+  }
 
-speak(reply);
+  speak(reply);
 
   input.value = "";
+  isProcessing = false;
 }
 
 sendBtn.addEventListener("click", sendMessage);
@@ -128,27 +179,49 @@ if (SpeechRecognition) {
   recognition.interimResults = false;
 
   micBtn.addEventListener("click", () => {
-    listenStatus.innerText = "Listening...";
-    responseBox.innerText = "Listening...";
+  if (isListening || isProcessing) return;
+
+  speechSynthesis.cancel();
+
+  isListening = true;
+  listenStatus.innerText = "Listening...";
+  responseBox.innerText = "Listening...";
+
+  try {
     recognition.start();
-  });
+  } catch (error) {
+    isListening = false;
+    listenStatus.innerText = "Mic Error";
+  }
+});
 
   recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    input.value = transcript;
-    sendMessage();
-  };
+  const transcript = event.results[0][0].transcript.trim();
 
-  recognition.onerror = () => {
-    listenStatus.innerText = "Mic Error";
-    responseBox.innerText = "Microphone error. Check Chrome microphone permission.";
-  };
+  if (!transcript) return;
 
-  recognition.onend = () => {
-    if (listenStatus.innerText === "Listening...") {
-      listenStatus.innerText = "System Active";
-    }
-  };
+  input.value = transcript;
+
+  isListening = false;
+  recognition.stop();
+
+  sendMessage();
+};
+
+recognition.onerror = () => {
+  isListening = false;
+  listenStatus.innerText = "Mic Error";
+  responseBox.innerText = "Microphone error. Check Chrome microphone permission.";
+};
+
+recognition.onend = () => {
+  isListening = false;
+
+  if (!isProcessing && listenStatus.innerText === "Listening...") {
+    listenStatus.innerText = "System Active";
+  }
+};
+
 } else {
   micBtn.disabled = true;
   micBtn.innerText = "NO MIC";

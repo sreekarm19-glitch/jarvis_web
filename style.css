@@ -190,7 +190,7 @@ body {
 }
 
 .chat-bar button {
-  width: 86px;
+  width: 75px;
   border: none;
   background: transparent;
   color: #ffffff;
@@ -447,7 +447,7 @@ body {
     margin: 0 0 16px 0;
     border-radius: 13px;
     display: grid;
-    grid-template-columns: 1fr 54px 54px;
+    grid-template-columns: 1fr 48px 52px 50px;
     overflow: hidden;
   }
 
