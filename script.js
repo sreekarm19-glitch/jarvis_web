@@ -4,10 +4,34 @@ const micBtn = document.getElementById("micBtn");
 const sendBtn = document.getElementById("sendBtn");
 const listenStatus = document.getElementById("listenStatus");
 const muteBtn = document.getElementById("muteBtn");
+const voiceBtn = document.getElementById("voiceBtn");
 
 let isMuted = false;
 let isProcessing = false;
 let isListening = false;
+
+let currentVoiceMode = 0;
+
+const voiceModes = [
+  {
+    name: "Male Deep",
+    voiceKeywords: ["daniel", "google us english male", "microsoft david", "male"],
+    rate: 0.92,
+    pitch: 0.85
+  },
+  {
+    name: "Female",
+    voiceKeywords: ["samantha", "google us english", "microsoft zira", "female"],
+    rate: 0.96,
+    pitch: 1.08
+  },
+  {
+    name: "Robotic",
+    voiceKeywords: ["alex", "google uk english male", "daniel", "english"],
+    rate: 0.92,
+    pitch: 0.75
+  }
+];
 
 function updateClock() {
   const now = new Date();
@@ -38,23 +62,48 @@ function speak(text) {
   speechSynthesis.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
+  const selectedMode = voiceModes[currentVoiceMode];
 
-  const preferredVoice =
-    jarvisVoices.find(voice => voice.name.toLowerCase().includes("daniel")) ||
-    jarvisVoices.find(voice => voice.name.toLowerCase().includes("google uk english male")) ||
-    jarvisVoices.find(voice => voice.name.toLowerCase().includes("microsoft david")) ||
-    jarvisVoices.find(voice => voice.name.toLowerCase().includes("male")) ||
-    jarvisVoices.find(voice => voice.lang.includes("en"));
+  let preferredVoice = null;
+
+  for (const keyword of selectedMode.voiceKeywords) {
+    preferredVoice = jarvisVoices.find(voice =>
+      voice.name.toLowerCase().includes(keyword.toLowerCase())
+    );
+
+    if (preferredVoice) break;
+  }
+
+  if (!preferredVoice) {
+    preferredVoice = jarvisVoices.find(voice => voice.lang.includes("en"));
+  }
 
   if (preferredVoice) {
     utterance.voice = preferredVoice;
   }
 
-  utterance.rate = 0.92;
-  utterance.pitch = 0.75;
+  utterance.rate = selectedMode.rate;
+  utterance.pitch = selectedMode.pitch;
   utterance.volume = 1;
 
   speechSynthesis.speak(utterance);
+}
+
+if (voiceBtn) {
+  voiceBtn.addEventListener("click", () => {
+    currentVoiceMode++;
+
+    if (currentVoiceMode >= voiceModes.length) {
+      currentVoiceMode = 0;
+    }
+
+    const selectedMode = voiceModes[currentVoiceMode];
+
+    voiceBtn.innerText = "Voice: " + selectedMode.name;
+    listenStatus.innerText = "Voice changed to " + selectedMode.name;
+
+    speak("Voice changed to " + selectedMode.name);
+  });
 }
 
 if (muteBtn) {
@@ -195,17 +244,23 @@ if (SpeechRecognition) {
   }
 });
 
-  recognition.onresult = (event) => {
+recognition.onresult = (event) => {
   const transcript = event.results[0][0].transcript.trim();
 
-  if (!transcript) return;
+  if (!transcript) {
+    isListening = false;
+    return;
+  }
 
   input.value = transcript;
+  responseBox.innerText = "You said: " + transcript;
+  listenStatus.innerText = "Processing...";
 
   isListening = false;
-  recognition.stop();
 
-  sendMessage();
+  setTimeout(() => {
+    sendMessage();
+  }, 300);
 };
 
 recognition.onerror = () => {
@@ -219,6 +274,7 @@ recognition.onend = () => {
 
   if (!isProcessing && listenStatus.innerText === "Listening...") {
     listenStatus.innerText = "System Active";
+    responseBox.innerText = "No speech detected. Try again.";
   }
 };
 
@@ -407,3 +463,4 @@ const connectBtn = document.getElementById("connectGlassesBtn");
 if (connectBtn) {
   connectBtn.addEventListener("click", connectGlasses);
 }
+
