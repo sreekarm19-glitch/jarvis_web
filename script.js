@@ -227,7 +227,7 @@ async function sendMessage() {
   responseBox.innerText = reply;
   listenStatus.innerText = "System Active";
 
-  const shortAnswer = makeShortForGlasses(reply);
+  const shortAnswer = makeTinyHudAnswer(message, reply);
   console.log("OLED short answer:", shortAnswer);
 
   const virtualOled = document.getElementById("virtualOled");
@@ -419,6 +419,7 @@ updateBatteryStatus();
 
 // ================= SHORT ANSWER FOR EDITH =================
 
+
 function makeShortForGlasses(text) {
   if (!text) return "No response.";
 
@@ -429,30 +430,28 @@ function makeShortForGlasses(text) {
     .replace(/\s+/g, " ")
     .trim();
 
-  if (clean.length <= 80) {
-    return clean;
+  // Prefer formula-style answers
+  if (clean.toLowerCase().includes("speed")) {
+    return "Speed = Distance / Time";
   }
 
-  const sentences = clean
-    .split(/[.!?]/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-
-  let shortText = "";
-
-  if (sentences.length >= 2) {
-    shortText = sentences[0] + ". " + sentences[1] + ".";
-  } else if (sentences.length === 1) {
-    shortText = sentences[0] + ".";
-  } else {
-    shortText = clean;
+  if (clean.toLowerCase().includes("photosynthesis")) {
+    return "Plants make food using sunlight.";
   }
 
-  if (shortText.length > 90) {
-    shortText = shortText.substring(0, 87).trim() + "...";
+  if (clean.toLowerCase().includes("gravity")) {
+    return "Gravity pulls objects downward.";
   }
 
-  return shortText;
+  // Take only first sentence
+  let firstSentence = clean.split(/[.!?]/)[0].trim();
+
+  // Max HUD limit
+  if (firstSentence.length > 42) {
+    firstSentence = firstSentence.substring(0, 39).trim() + "...";
+  }
+
+  return firstSentence;
 }
 
 // ================= EDITH BLUETOOTH + OLED BRIDGE =================
@@ -592,4 +591,44 @@ const connectBtn = document.getElementById("connectGlassesBtn");
 if (connectBtn) {
   connectBtn.innerText = "Connect EDITH";
   connectBtn.addEventListener("click", connectGlasses);
+}
+
+function makeTinyHudAnswer(question, answer) {
+  const q = (question || "").toLowerCase();
+  const a = (answer || "").toLowerCase();
+
+  if (q.includes("speed") || a.includes("speed")) {
+    return "Speed = Distance / Time";
+  }
+
+  if (q.includes("photosynthesis") || a.includes("photosynthesis")) {
+    return "Plants make food using sunlight.";
+  }
+
+  if (q.includes("gravity") || a.includes("gravity")) {
+    return "Gravity pulls objects downward.";
+  }
+
+  if (q.includes("force") || a.includes("force")) {
+    return "Force = Mass x Acceleration";
+  }
+
+  if (q.includes("area of circle") || a.includes("area of circle")) {
+    return "Area of circle = pi r^2";
+  }
+
+  let clean = answer
+    .replace(/\*/g, "")
+    .replace(/#/g, "")
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  let sentence = clean.split(/[.!?]/)[0].trim();
+
+  if (sentence.length > 35) {
+    sentence = sentence.substring(0, 32).trim() + "...";
+  }
+
+  return sentence;
 }
