@@ -33,6 +33,8 @@ const voiceModes = [
   }
 ];
 
+// ================= CLOCK =================
+
 function updateClock() {
   const now = new Date();
 
@@ -46,6 +48,8 @@ function updateClock() {
 
 setInterval(updateClock, 1000);
 updateClock();
+
+// ================= VOICE =================
 
 let jarvisVoices = [];
 
@@ -120,10 +124,32 @@ if (muteBtn) {
     }
   });
 }
+
+// ================= EDITH EMERGENCY CHECK =================
+
+function isEmergencyCommand(message) {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("jarvis activate emergency") ||
+    lower.includes("activate emergency") ||
+    lower.includes("trigger emergency") ||
+    lower.includes("send emergency alert") ||
+    lower.includes("emergency mode")
+  );
+}
+
+// ================= JARVIS AI =================
+
 async function askJarvis(message) {
   const lower = message.toLowerCase();
-  
-    if (
+
+  if (isEmergencyCommand(message)) {
+    await triggerEmergencySOS();
+    return "Emergency mode activated. Opening WhatsApp SOS message.";
+  }
+
+  if (
     lower.includes("who created you") ||
     lower.includes("who made you") ||
     lower.includes("who built you") ||
@@ -133,6 +159,7 @@ async function askJarvis(message) {
   ) {
     return "I was created and developed by Sreekar.";
   }
+
   if (lower.includes("open youtube")) {
     window.open("https://youtube.com", "_blank");
     return "Opening YouTube.";
@@ -165,18 +192,20 @@ async function askJarvis(message) {
     const data = await res.json();
 
     if (data.reply) {
-  return data.reply;
-}
+      return data.reply;
+    }
 
-if (data.error) {
-  return "AI server error: " + data.error;
-}
+    if (data.error) {
+      return "AI server error: " + data.error;
+    }
 
-return "I could not get a proper response from the AI server.";
+    return "I could not get a proper response from the AI server.";
   } catch (error) {
     return "I cannot connect to the JARVIS AI server. Make sure node server.js is running.";
   }
 }
+
+// ================= SEND MESSAGE =================
 
 async function sendMessage() {
   if (isProcessing) return;
@@ -192,6 +221,7 @@ async function sendMessage() {
   responseBox.innerText = "Thinking...";
   listenStatus.innerText = "Processing...";
 
+  const emergencyCommand = isEmergencyCommand(message);
   const reply = await askJarvis(message);
 
   responseBox.innerText = reply;
@@ -200,8 +230,15 @@ async function sendMessage() {
   const shortAnswer = makeShortForGlasses(reply);
   console.log("OLED short answer:", shortAnswer);
 
-  if (typeof sendToVirtualOled === "function") {
-    sendToVirtualOled(reply);
+  const virtualOled = document.getElementById("virtualOled");
+if (virtualOled) {
+  virtualOled.innerHTML = shortAnswer;
+}
+
+  sendToVirtualOled(shortAnswer);
+
+  if (!emergencyCommand) {
+    await sendToGlasses("AI:" + shortAnswer);
   }
 
   speak(reply);
@@ -218,6 +255,8 @@ input.addEventListener("keydown", (event) => {
   }
 });
 
+// ================= MIC INPUT =================
+
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (SpeechRecognition) {
@@ -228,60 +267,62 @@ if (SpeechRecognition) {
   recognition.interimResults = false;
 
   micBtn.addEventListener("click", () => {
-  if (isListening || isProcessing) return;
+    if (isListening || isProcessing) return;
 
-  speechSynthesis.cancel();
+    speechSynthesis.cancel();
 
-  isListening = true;
-  listenStatus.innerText = "Listening...";
-  responseBox.innerText = "Listening...";
+    isListening = true;
+    listenStatus.innerText = "Listening...";
+    responseBox.innerText = "Listening...";
 
-  try {
-    recognition.start();
-  } catch (error) {
+    try {
+      recognition.start();
+    } catch (error) {
+      isListening = false;
+      listenStatus.innerText = "Mic Error";
+    }
+  });
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript.trim();
+
+    if (!transcript) {
+      isListening = false;
+      return;
+    }
+
+    input.value = transcript;
+    responseBox.innerText = "You said: " + transcript;
+    listenStatus.innerText = "Processing...";
+
+    isListening = false;
+
+    setTimeout(() => {
+      sendMessage();
+    }, 300);
+  };
+
+  recognition.onerror = () => {
     isListening = false;
     listenStatus.innerText = "Mic Error";
-  }
-});
+    responseBox.innerText = "Microphone error. Check Chrome microphone permission.";
+  };
 
-recognition.onresult = (event) => {
-  const transcript = event.results[0][0].transcript.trim();
-
-  if (!transcript) {
+  recognition.onend = () => {
     isListening = false;
-    return;
-  }
 
-  input.value = transcript;
-  responseBox.innerText = "You said: " + transcript;
-  listenStatus.innerText = "Processing...";
-
-  isListening = false;
-
-  setTimeout(() => {
-    sendMessage();
-  }, 300);
-};
-
-recognition.onerror = () => {
-  isListening = false;
-  listenStatus.innerText = "Mic Error";
-  responseBox.innerText = "Microphone error. Check Chrome microphone permission.";
-};
-
-recognition.onend = () => {
-  isListening = false;
-
-  if (!isProcessing && listenStatus.innerText === "Listening...") {
-    listenStatus.innerText = "System Active";
-    responseBox.innerText = "No speech detected. Try again.";
-  }
-};
+    if (!isProcessing && listenStatus.innerText === "Listening...") {
+      listenStatus.innerText = "System Active";
+      responseBox.innerText = "No speech detected. Try again.";
+    }
+  };
 
 } else {
   micBtn.disabled = true;
   micBtn.innerText = "NO MIC";
-} 
+}
+
+// ================= QUICK ACCESS =================
 
 document.querySelectorAll(".quick-grid button").forEach((button) => {
   button.addEventListener("click", () => {
@@ -289,42 +330,45 @@ document.querySelectorAll(".quick-grid button").forEach((button) => {
 
     if (action === "google") {
       window.open("https://google.com", "_blank");
-    responseBox.innerText = "Opening Google.";
-     speak("Opening Google.");
+      responseBox.innerText = "Opening Google.";
+      speak("Opening Google.");
     }
 
     if (action === "youtube") {
       window.open("https://youtube.com", "_blank");
-    responseBox.innerText = "Opening YouTube.";
-     speak("Opening YouTube.");
+      responseBox.innerText = "Opening YouTube.";
+      speak("Opening YouTube.");
     }
 
     if (action === "weather") {
       window.open("https://www.google.com/search?q=weather", "_blank");
-    responseBox.innerText = "Opening Weather.";
-     speak("Opening Weather.");
+      responseBox.innerText = "Opening Weather.";
+      speak("Opening Weather.");
     }
 
     if (action === "calculator") {
       window.open("https://www.google.com/search?q=calculator", "_blank");
-    responseBox.innerText = "Opening Calculator.";
-     speak("Opening Calculator.");
+      responseBox.innerText = "Opening Calculator.";
+      speak("Opening Calculator.");
     }
 
     if (action === "netflix") {
       window.open("https://www.netflix.com", "_blank");
-    responseBox.innerText = "Opening Netflix.";
-     speak("Opening Netflix.");
+      responseBox.innerText = "Opening Netflix.";
+      speak("Opening Netflix.");
     }
 
     if (action === "swiggy") {
-  window.open("https://www.swiggy.com", "_blank");
-  responseBox.innerText = "Opening Swiggy.";
-     speak("Opening Swiggy.");
-}
+      window.open("https://www.swiggy.com", "_blank");
+      responseBox.innerText = "Opening Swiggy.";
+      speak("Opening Swiggy.");
+    }
   });
 });
- async function updateSystemStatus() {
+
+// ================= SYSTEM STATUS =================
+
+async function updateSystemStatus() {
   try {
     const res = await fetch("/status");
     const data = await res.json();
@@ -373,6 +417,8 @@ setInterval(updateSystemStatus, 3000);
 updateSystemStatus();
 updateBatteryStatus();
 
+// ================= SHORT ANSWER FOR EDITH =================
+
 function makeShortForGlasses(text) {
   if (!text) return "No response.";
 
@@ -383,12 +429,10 @@ function makeShortForGlasses(text) {
     .replace(/\s+/g, " ")
     .trim();
 
-  // If answer is already short, keep it
   if (clean.length <= 80) {
     return clean;
   }
 
-  // Take first 1-2 useful sentences
   const sentences = clean
     .split(/[.!?]/)
     .map(s => s.trim())
@@ -404,63 +448,148 @@ function makeShortForGlasses(text) {
     shortText = clean;
   }
 
-  // OLED limit
   if (shortText.length > 90) {
     shortText = shortText.substring(0, 87).trim() + "...";
   }
 
   return shortText;
 }
+
+// ================= EDITH BLUETOOTH + OLED BRIDGE =================
+
 let glassesDevice = null;
 let glassesCharacteristic = null;
+let glassesConnected = false;
 
-const EDITH_SERVICE_UUID = "d7f37c01-4f4a-4f5a-9f66-edith0000001";
-const EDITH_CHARACTERISTIC_UUID = "d7f37c02-4f4a-4f5a-9f66-edith0000002";
+// These UUIDs must match the ESP32 Arduino code
+const EDITH_SERVICE_UUID = "7b3f0001-2a6d-4a4e-9b8b-ed1700000001";
+const EDITH_CHARACTERISTIC_UUID = "7b3f0002-2a6d-4a4e-9b8b-ed1700000002";
+
+// Replace this number before using emergency mode.
+// Format: country code + number, no + sign, no spaces.
+// Example: 919876543210
+const EMERGENCY_PHONE_NUMBER = "9963296459";
 
 async function connectGlasses() {
   try {
-    responseBox.innerText = "Searching for E.D.I.T.H glasses...";
+    if (!navigator.bluetooth) {
+      responseBox.innerText = "Bluetooth not supported. Use Chrome or Edge.";
+      listenStatus.innerText = "Bluetooth Not Supported";
+      return;
+    }
+
+    responseBox.innerText = "Searching for EDITH...";
     listenStatus.innerText = "Connecting...";
 
     glassesDevice = await navigator.bluetooth.requestDevice({
-      filters: [{ name: "EDITH_GLASSES" }],
+      filters: [{ namePrefix: "EDITH" }],
       optionalServices: [EDITH_SERVICE_UUID]
+    });
+
+    glassesDevice.addEventListener("gattserverdisconnected", () => {
+      glassesConnected = false;
+      glassesCharacteristic = null;
+
+      responseBox.innerText = "EDITH disconnected.";
+      listenStatus.innerText = "EDITH Disconnected";
+      sendToVirtualOled("EDITH DISCONNECTED");
     });
 
     const server = await glassesDevice.gatt.connect();
     const service = await server.getPrimaryService(EDITH_SERVICE_UUID);
     glassesCharacteristic = await service.getCharacteristic(EDITH_CHARACTERISTIC_UUID);
 
-    responseBox.innerText = "E.D.I.T.H glasses connected.";
-    listenStatus.innerText = "Glasses Connected";
+    glassesConnected = true;
 
-    speak("E.D.I.T.H glasses connected.");
+    responseBox.innerText = "EDITH connected.";
+    listenStatus.innerText = "EDITH Connected";
+    sendToVirtualOled("EDITH CONNECTED<br>Ready for JARVIS");
+
+    speak("EDITH connected.");
   } catch (error) {
     console.error(error);
-    responseBox.innerText = "Could not connect to glasses. Use Chrome and turn on Bluetooth.";
+    responseBox.innerText = "Could not connect to EDITH. Use Chrome and turn on Bluetooth.";
     listenStatus.innerText = "Connection Failed";
   }
 }
 
-async function sendToGlasses(text) {
-  if (!glassesCharacteristic) {
-    console.log("Glasses not connected. Short answer:", text);
+async function sendToGlasses(command) {
+  if (!glassesConnected || !glassesCharacteristic) {
+    console.log("EDITH not connected. Command:", command);
     return;
   }
 
   try {
     const encoder = new TextEncoder();
-    await glassesCharacteristic.writeValue(encoder.encode(text));
-    console.log("Sent to glasses:", text);
+    await glassesCharacteristic.writeValue(encoder.encode(command));
+    console.log("Sent to EDITH:", command);
   } catch (error) {
-    console.error("Glasses send error:", error);
-    responseBox.innerText += "\n\nGlasses disconnected. Reconnect glasses.";
+    console.error("EDITH send error:", error);
+    responseBox.innerText += "\n\nEDITH disconnected. Reconnect EDITH.";
+    listenStatus.innerText = "EDITH Send Failed";
   }
+}
+
+function sendToVirtualOled(text) {
+  const virtualOled = document.getElementById("virtualOled");
+
+  if (virtualOled) {
+    virtualOled.innerHTML = text;
+  }
+}
+
+async function triggerEmergencySOS() {
+  sendToVirtualOled("SOS ACTIVE<br>Emergency triggered");
+  await sendToGlasses("SOS");
+
+  try {
+    const position = await getCurrentLocation();
+
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+
+    openWhatsAppSOS(latitude, longitude);
+  } catch (error) {
+    console.error("Location error:", error);
+
+    const message = encodeURIComponent(
+      "EMERGENCY ALERT from EDITH.\nI may need help.\nLocation could not be detected."
+    );
+
+    window.open(`https://wa.me/${EMERGENCY_PHONE_NUMBER}?text=${message}`, "_blank");
+  }
+}
+
+function getCurrentLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation not supported"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    });
+  });
+}
+
+function openWhatsAppSOS(latitude, longitude) {
+  const locationLink = `https://maps.google.com/?q=${latitude},${longitude}`;
+
+  const message = encodeURIComponent(
+    `EMERGENCY ALERT from EDITH.\n` +
+    `I may need help.\n` +
+    `My current location:\n${locationLink}`
+  );
+
+  window.open(`https://wa.me/${EMERGENCY_PHONE_NUMBER}?text=${message}`, "_blank");
 }
 
 const connectBtn = document.getElementById("connectGlassesBtn");
 
 if (connectBtn) {
+  connectBtn.innerText = "Connect EDITH";
   connectBtn.addEventListener("click", connectGlasses);
 }
-
