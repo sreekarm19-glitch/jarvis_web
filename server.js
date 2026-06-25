@@ -80,6 +80,34 @@ app.get("/status", (req, res) => {
   });
 });
 
+// Backup HUD shortener in case AI JSON fails
+function makeFallbackHud(question, answer) {
+  const q = (question || "").toLowerCase();
+
+  if (q.includes("speed")) return "Speed = Distance / Time";
+  if (q.includes("photosynthesis")) return "Plants make food\nusing sunlight.";
+  if (q.includes("gravity")) return "Gravity pulls objects\ntowards Earth.";
+  if (q.includes("force")) return "Force = Mass x\nAcceleration";
+  if (q.includes("jarvis") && q.includes("full form")) {
+    return "JARVIS:\nJust A Rather Very\nIntelligent System";
+  }
+
+  let clean = (answer || "")
+    .replace(/\*/g, "")
+    .replace(/#/g, "")
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  let firstSentence = clean.split(/[.!?]/)[0].trim();
+
+  if (firstSentence.length > 55) {
+    firstSentence = firstSentence.substring(0, 52).trim() + "...";
+  }
+
+  return firstSentence || "No response.";
+}
+
 app.post("/ask", async (req, res) => {
   try {
     const userMessage = req.body.message;
@@ -96,18 +124,59 @@ app.post("/ask", async (req, res) => {
         {
           role: "system",
           content:
-  "You are JARVIS, a real AI assistant created and coded by Sreekar. If anyone asks who created you, who made you, or who built you, always answer: 'I was created and coded by Sreekar.' Do not mention Tony Stark, Iron Man, Marvel, or fiction unless the user specifically asks about the movie character. Give short and useful answers.",
+            `You are JARVIS, a real AI assistant created and coded by Sreekar.
+
+If anyone asks who created you, who made you, or who built you, always answer:
+"I was created and coded by Sreekar."
+
+Do not mention Tony Stark, Iron Man, Marvel, or fiction unless the user specifically asks about the movie character.
+
+You must return ONLY valid JSON in this exact format:
+{
+  "reply": "full useful answer for the main JARVIS screen",
+  "hud": "very short answer for EDITH OLED"
+}
+
+Rules:
+- "reply" can be 2-5 short sentences.
+- "hud" must be extremely short, maximum 3 lines.
+- HUD should be clear, not cut mid-word.
+- HUD should avoid long paragraphs.
+- For formulas, use formula format.
+- For definitions, use 1 short sentence.
+- Do not add markdown.
+- Do not add text outside JSON.`,
         },
         {
           role: "user",
           content: userMessage,
         },
       ],
+      temperature: 0.4,
     });
 
-    const reply = completion.choices[0]?.message?.content || "No response.";
+    const raw = completion.choices[0]?.message?.content || "";
 
-    res.json({ reply });
+    let parsed;
+
+    try {
+      parsed = JSON.parse(raw);
+    } catch (error) {
+      const fallbackReply = raw || "No response.";
+      return res.json({
+        reply: fallbackReply,
+        hud: makeFallbackHud(userMessage, fallbackReply),
+      });
+    }
+
+    const reply = parsed.reply || "No response.";
+    const hud = parsed.hud || makeFallbackHud(userMessage, reply);
+
+    res.json({
+      reply,
+      hud
+    });
+
   } catch (error) {
     console.error("GROQ ERROR:", error);
 
