@@ -636,62 +636,56 @@ const EMERGENCY_PHONE_NUMBER = "9963296459";
 const EMERGENCY_PHONE_NUMBER = "9121325757";
 
 async function connectGlasses() {
-try {
-if (!navigator.bluetooth) {
-responseBox.innerText = "Bluetooth not supported. Use Chrome or Edge.";
-listenStatus.innerText = "Bluetooth Not Supported";
-return;
-}
+  try {
+    if (!navigator.bluetooth) {
+      responseBox.innerText = "Bluetooth not supported. Use Chrome or Edge.";
+      listenStatus.innerText = "Bluetooth Not Supported";
+      return;
+    }
 
-```
-responseBox.innerText = "Searching for EDITH...";
-listenStatus.innerText = "Connecting...";
+    responseBox.innerText = "Searching for EDITH...";
+    listenStatus.innerText = "Connecting...";
 
-glassesDevice = await navigator.bluetooth.requestDevice({
-  filters: [{ namePrefix: "EDITH" }],
-  optionalServices: [EDITH_SERVICE_UUID]
-});
+    glassesDevice = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: "EDITH" }],
+      optionalServices: [EDITH_SERVICE_UUID]
+    });
 
-glassesDevice.addEventListener("gattserverdisconnected", () => {
-  glassesConnected = false;
-  glassesCharacteristic = null;
-  glassesTxCharacteristic = null;
+    glassesDevice.addEventListener("gattserverdisconnected", () => {
+      glassesConnected = false;
+      glassesCharacteristic = null;
+      glassesTxCharacteristic = null;
 
-  responseBox.innerText = "EDITH disconnected.";
-  listenStatus.innerText = "EDITH Disconnected";
-  sendToVirtualOled("EDITH DISCONNECTED");
-});
+      responseBox.innerText = "EDITH disconnected.";
+      listenStatus.innerText = "EDITH Disconnected";
+      sendToVirtualOled("EDITH DISCONNECTED");
+    });
 
-const server = await glassesDevice.gatt.connect();
-const service = await server.getPrimaryService(EDITH_SERVICE_UUID);
+    const server = await glassesDevice.gatt.connect();
+    const service = await server.getPrimaryService(EDITH_SERVICE_UUID);
 
-// RX = website sends commands to EDITH
-glassesCharacteristic = await service.getCharacteristic(EDITH_RX_CHARACTERISTIC_UUID);
+    glassesCharacteristic = await service.getCharacteristic(EDITH_RX_CHARACTERISTIC_UUID);
+    glassesTxCharacteristic = await service.getCharacteristic(EDITH_TX_CHARACTERISTIC_UUID);
 
-// TX = EDITH sends button commands to website
-glassesTxCharacteristic = await service.getCharacteristic(EDITH_TX_CHARACTERISTIC_UUID);
+    await glassesTxCharacteristic.startNotifications();
 
-await glassesTxCharacteristic.startNotifications();
+    glassesTxCharacteristic.addEventListener(
+      "characteristicvaluechanged",
+      handleEdithNotification
+    );
 
-glassesTxCharacteristic.addEventListener(
-  "characteristicvaluechanged",
-  handleEdithNotification
-);
+    glassesConnected = true;
 
-glassesConnected = true;
+    responseBox.innerText = "EDITH connected.";
+    listenStatus.innerText = "EDITH Connected";
+    sendToVirtualOled("EDITH CONNECTED<br>Ready for JARVIS");
 
-responseBox.innerText = "EDITH connected.";
-listenStatus.innerText = "EDITH Connected";
-sendToVirtualOled("EDITH CONNECTED<br>Ready for JARVIS");
-
-speak("EDITH connected.");
-```
-
-} catch (error) {
-console.error(error);
-responseBox.innerText = "Could not connect to EDITH. Use Chrome and turn on Bluetooth.";
-listenStatus.innerText = "Connection Failed";
-}
+    speak("EDITH connected.");
+  } catch (error) {
+    console.error(error);
+    responseBox.innerText = "Could not connect to EDITH. Use Chrome and turn on Bluetooth.";
+    listenStatus.innerText = "Connection Failed";
+  }
 }
 
 function handleEdithNotification(event) {
