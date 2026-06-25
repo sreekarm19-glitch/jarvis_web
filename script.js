@@ -82,9 +82,9 @@ preferredVoice = jarvisVoices.find(voice =>
 voice.name.toLowerCase().includes(keyword.toLowerCase())
 );
 
-```
+
 if (preferredVoice) break;
-```
+
 
 }
 
@@ -107,7 +107,7 @@ if (voiceBtn) {
 voiceBtn.addEventListener("click", () => {
 currentVoiceMode++;
 
-```
+
 if (currentVoiceMode >= voiceModes.length) {
   currentVoiceMode = 0;
 }
@@ -118,7 +118,7 @@ voiceBtn.innerText = "Voice: " + selectedMode.name;
 listenStatus.innerText = "Voice changed to " + selectedMode.name;
 
 speak("Voice changed to " + selectedMode.name);
-```
+
 
 });
 }
@@ -127,7 +127,7 @@ if (muteBtn) {
 muteBtn.addEventListener("click", () => {
 isMuted = !isMuted;
 
-```
+
 if (isMuted) {
   speechSynthesis.cancel();
   muteBtn.innerText = "UNMUTE";
@@ -136,7 +136,7 @@ if (isMuted) {
   muteBtn.innerText = "MUTE";
   listenStatus.innerText = "System Active";
 }
-```
+
 
 });
 }
@@ -169,12 +169,12 @@ const lower = message.toLowerCase();
 if (isEmergencyCommand(message)) {
 await triggerEmergencySOS();
 
-```
+
 return {
   reply: "Emergency mode activated. Opening WhatsApp SOS message.",
   hud: "SOS ACTIVE"
 };
-```
+
 
 }
 
@@ -195,48 +195,48 @@ hud: "Created by\nSreekar"
 if (lower.includes("open youtube")) {
 window.open("https://youtube.com", "_blank");
 
-```
+
 return {
   reply: "Opening YouTube.",
   hud: "Opening\nYouTube"
 };
-```
+
 
 }
 
 if (lower.includes("open google")) {
 window.open("https://google.com", "_blank");
 
-```
+
 return {
   reply: "Opening Google.",
   hud: "Opening\nGoogle"
 };
-```
+
 
 }
 
 if (lower.includes("calculator")) {
 window.open("https://www.google.com/search?q=calculator", "_blank");
 
-```
+
 return {
   reply: "Opening calculator.",
   hud: "Opening\nCalculator"
 };
-```
+
 
 }
 
 if (lower.includes("weather")) {
 window.open("https://www.google.com/search?q=weather", "_blank");
 
-```
+
 return {
   reply: "Opening weather.",
   hud: "Opening\nWeather"
 };
-```
+
 
 }
 
@@ -249,7 +249,7 @@ headers: {
 body: JSON.stringify({ message: message })
 });
 
-```
+
 const data = await res.json();
 
 if (data.reply) {
@@ -272,17 +272,17 @@ return {
   reply: "I could not get a proper response from the AI server.",
   hud: "No proper\nresponse."
 };
-```
+
 
 } catch (error) {
 console.error("Ask JARVIS error:", error);
 
-```
+
 return {
   reply: "I cannot connect to the JARVIS AI server. Make sure the server is running.",
   hud: "Server offline."
 };
-```
+
 
 }
 }
@@ -307,7 +307,7 @@ try {
 const emergencyCommand = isEmergencyCommand(message);
 const result = await askJarvis(message);
 
-```
+
 const reply = typeof result === "string" ? result : result.reply;
 const hudAnswer =
   typeof result === "string"
@@ -329,7 +329,7 @@ if (!emergencyCommand) {
 
 speak(reply);
 input.value = "";
-```
+
 
 } catch (error) {
 console.error("Send message error:", error);
@@ -367,7 +367,7 @@ recognition.interimResults = false;
 micBtn.addEventListener("click", () => {
 if (isListening || isProcessing) return;
 
-```
+
 speechSynthesis.cancel();
 
 isListening = true;
@@ -381,14 +381,14 @@ try {
   isListening = false;
   listenStatus.innerText = "Mic Error";
 }
-```
+
 
 });
 
 recognition.onresult = event => {
 const transcript = event.results[0][0].transcript.trim();
 
-```
+
 if (!transcript) {
   isListening = false;
   return;
@@ -403,7 +403,7 @@ isListening = false;
 setTimeout(() => {
   sendMessage();
 }, 300);
-```
+
 
 };
 
@@ -416,12 +416,12 @@ responseBox.innerText = "Microphone error. Check Chrome microphone permission.";
 recognition.onend = () => {
 isListening = false;
 
-```
+
 if (!isProcessing && listenStatus.innerText === "Listening...") {
   listenStatus.innerText = "System Active";
   responseBox.innerText = "No speech detected. Try again.";
 }
-```
+
 
 };
 } else {
@@ -437,7 +437,7 @@ document.querySelectorAll(".quick-grid button").forEach(button => {
 button.addEventListener("click", () => {
 const action = button.dataset.action;
 
-```
+
 if (action === "google") {
   window.open("https://google.com", "_blank");
   responseBox.innerText = "Opening Google.";
@@ -479,7 +479,7 @@ if (action === "swiggy") {
   sendToVirtualOled("Opening\nSwiggy");
   speak("Opening Swiggy.");
 }
-```
+
 
 });
 });
@@ -491,7 +491,7 @@ try {
 const res = await fetch("/status");
 const data = await res.json();
 
-```
+
 const cpu = data.cpu ?? 0;
 const ram = data.ram ?? 0;
 
@@ -505,16 +505,16 @@ if (cpuBar) cpuBar.style.width = cpu + "%";
 
 if (ramText) ramText.innerText = ram + "%";
 if (ramBar) ramBar.style.width = ram + "%";
-```
+
 
 } catch (error) {
 const cpuText = document.getElementById("cpuText");
 const ramText = document.getElementById("ramText");
 
-```
+
 if (cpuText) cpuText.innerText = "ERR";
 if (ramText) ramText.innerText = "ERR";
-```
+
 
 }
 }
@@ -524,7 +524,7 @@ try {
 const batteryText = document.getElementById("batteryText");
 const batteryBar = document.getElementById("batteryBar");
 
-```
+
 if ("getBattery" in navigator) {
   const battery = await navigator.getBattery();
 
@@ -543,16 +543,16 @@ if ("getBattery" in navigator) {
   if (batteryText) batteryText.innerText = "N/A";
   if (batteryBar) batteryBar.style.width = "0%";
 }
-```
+
 
 } catch (error) {
 const batteryText = document.getElementById("batteryText");
 const batteryBar = document.getElementById("batteryBar");
 
-```
+
 if (batteryText) batteryText.innerText = "N/A";
 if (batteryBar) batteryBar.style.width = "0%";
-```
+
 
 }
 }
@@ -623,11 +623,11 @@ return "JARVIS:\nJust A Rather Very\nIntelligent System";
 if (clean.includes(":")) {
 const afterColon = clean.split(":").slice(1).join(":").trim();
 
-```
+
 if (afterColon.length > 0) {
   return makeHudLines(afterColon);
 }
-```
+
 
 }
 
@@ -651,9 +651,9 @@ if (line) lines.push(line);
 line = word;
 }
 
-```
+
 if (lines.length === 3) break;
-```
+
 
 }
 
@@ -685,7 +685,7 @@ listenStatus.innerText = "Bluetooth Not Supported";
 return;
 }
 
-```
+
 responseBox.innerText = "Searching for EDITH...";
 listenStatus.innerText = "Connecting...";
 
@@ -724,7 +724,7 @@ listenStatus.innerText = "EDITH Connected";
 sendToVirtualOled("EDITH CONNECTED<br>Ready for JARVIS");
 
 speak("EDITH connected.");
-```
+
 
 } catch (error) {
 console.error(error);
@@ -819,20 +819,20 @@ const position = await getCurrentLocation();
 const latitude = position.coords.latitude;
 const longitude = position.coords.longitude;
 
-```
+
 openWhatsAppSOS(latitude, longitude);
-```
+
 
 } catch (error) {
 console.error("Location error:", error);
 
-```
+
 const message = encodeURIComponent(
   "EMERGENCY ALERT from EDITH.\nI may need help.\nLocation could not be detected."
 );
 
 window.open("https://wa.me/" + EMERGENCY_PHONE_NUMBER + "?text=" + message, "_blank");
-```
+
 
 }
 }
@@ -844,13 +844,13 @@ reject(new Error("Geolocation not supported"));
 return;
 }
 
-```
+
 navigator.geolocation.getCurrentPosition(resolve, reject, {
   enableHighAccuracy: true,
   timeout: 10000,
   maximumAge: 0
 });
-```
+
 
 });
 }
