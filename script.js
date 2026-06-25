@@ -9,7 +9,6 @@ const voiceBtn = document.getElementById("voiceBtn");
 let isMuted = false;
 let isProcessing = false;
 let isListening = false;
-
 let currentVoiceMode = 0;
 
 const voiceModes = [
@@ -38,12 +37,19 @@ pitch: 0.75
 function updateClock() {
 const now = new Date();
 
-document.getElementById("time").innerText = now.toLocaleTimeString([], {
+const timeEl = document.getElementById("time");
+const dateEl = document.getElementById("date");
+
+if (timeEl) {
+timeEl.innerText = now.toLocaleTimeString([], {
 hour: "2-digit",
 minute: "2-digit"
 });
+}
 
-document.getElementById("date").innerText = now.toDateString();
+if (dateEl) {
+dateEl.innerText = now.toDateString();
+}
 }
 
 setInterval(updateClock, 1000);
@@ -62,6 +68,7 @@ loadVoices();
 
 function speak(text) {
 if (isMuted) return;
+if (!text) return;
 
 speechSynthesis.cancel();
 
@@ -137,7 +144,7 @@ if (isMuted) {
 // ================= EDITH EMERGENCY CHECK =================
 
 function isEmergencyCommand(message) {
-const lower = (message || "").toLowerCase();
+const lower = (message || "").toLowerCase().trim();
 
 return (
 lower.includes("jarvis activate emergency") ||
@@ -239,7 +246,7 @@ method: "POST",
 headers: {
 "Content-Type": "application/json"
 },
-body: JSON.stringify({ message })
+body: JSON.stringify({ message: message })
 });
 
 ```
@@ -268,10 +275,15 @@ return {
 ```
 
 } catch (error) {
+console.error("Ask JARVIS error:", error);
+
+```
 return {
-reply: "I cannot connect to the JARVIS AI server. Make sure node server.js is running.",
-hud: "Server offline."
+  reply: "I cannot connect to the JARVIS AI server. Make sure the server is running.",
+  hud: "Server offline."
 };
+```
+
 }
 }
 
@@ -291,15 +303,16 @@ speechSynthesis.cancel();
 responseBox.innerText = "Thinking...";
 listenStatus.innerText = "Processing...";
 
+try {
 const emergencyCommand = isEmergencyCommand(message);
-
 const result = await askJarvis(message);
 
+```
 const reply = typeof result === "string" ? result : result.reply;
 const hudAnswer =
-typeof result === "string"
-? makeTinyHudAnswer(message, result)
-: result.hud || makeTinyHudAnswer(message, result.reply);
+  typeof result === "string"
+    ? makeTinyHudAnswer(message, result)
+    : result.hud || makeTinyHudAnswer(message, result.reply);
 
 responseBox.innerText = reply;
 listenStatus.innerText = "System Active";
@@ -311,29 +324,41 @@ console.log("EDITH HUD answer:", shortAnswer);
 sendToVirtualOled(shortAnswer);
 
 if (!emergencyCommand) {
-await sendToGlasses("AI:" + shortAnswer);
+  await sendToGlasses("AI:" + shortAnswer);
 }
 
 speak(reply);
-
 input.value = "";
+```
+
+} catch (error) {
+console.error("Send message error:", error);
+responseBox.innerText = "Something went wrong in JARVIS.";
+listenStatus.innerText = "Error";
+} finally {
 isProcessing = false;
 }
+}
 
+if (sendBtn) {
 sendBtn.addEventListener("click", sendMessage);
+}
 
+if (input) {
 input.addEventListener("keydown", event => {
 if (event.key === "Enter") {
 sendMessage();
 }
 });
+}
 
 // ================= MIC INPUT =================
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
 
 if (SpeechRecognition) {
-const recognition = new SpeechRecognition();
+recognition = new SpeechRecognition();
 
 recognition.lang = "en-US";
 recognition.continuous = false;
@@ -352,6 +377,7 @@ responseBox.innerText = "Listening...";
 try {
   recognition.start();
 } catch (error) {
+  console.error("Mic start error:", error);
   isListening = false;
   listenStatus.innerText = "Mic Error";
 }
@@ -399,8 +425,10 @@ if (!isProcessing && listenStatus.innerText === "Listening...") {
 
 };
 } else {
+if (micBtn) {
 micBtn.disabled = true;
 micBtn.innerText = "NO MIC";
+}
 }
 
 // ================= QUICK ACCESS =================
@@ -467,30 +495,44 @@ const data = await res.json();
 const cpu = data.cpu ?? 0;
 const ram = data.ram ?? 0;
 
-document.getElementById("cpuText").innerText = cpu + "%";
-document.getElementById("cpuBar").style.width = cpu + "%";
+const cpuText = document.getElementById("cpuText");
+const cpuBar = document.getElementById("cpuBar");
+const ramText = document.getElementById("ramText");
+const ramBar = document.getElementById("ramBar");
 
-document.getElementById("ramText").innerText = ram + "%";
-document.getElementById("ramBar").style.width = ram + "%";
+if (cpuText) cpuText.innerText = cpu + "%";
+if (cpuBar) cpuBar.style.width = cpu + "%";
+
+if (ramText) ramText.innerText = ram + "%";
+if (ramBar) ramBar.style.width = ram + "%";
 ```
 
 } catch (error) {
-document.getElementById("cpuText").innerText = "ERR";
-document.getElementById("ramText").innerText = "ERR";
+const cpuText = document.getElementById("cpuText");
+const ramText = document.getElementById("ramText");
+
+```
+if (cpuText) cpuText.innerText = "ERR";
+if (ramText) ramText.innerText = "ERR";
+```
+
 }
 }
 
 async function updateBatteryStatus() {
 try {
-if ("getBattery" in navigator) {
-const battery = await navigator.getBattery();
+const batteryText = document.getElementById("batteryText");
+const batteryBar = document.getElementById("batteryBar");
 
 ```
+if ("getBattery" in navigator) {
+  const battery = await navigator.getBattery();
+
   function setBattery() {
     const percent = Math.round(battery.level * 100);
 
-    document.getElementById("batteryText").innerText = percent + "%";
-    document.getElementById("batteryBar").style.width = percent + "%";
+    if (batteryText) batteryText.innerText = percent + "%";
+    if (batteryBar) batteryBar.style.width = percent + "%";
   }
 
   setBattery();
@@ -498,14 +540,20 @@ const battery = await navigator.getBattery();
   battery.addEventListener("levelchange", setBattery);
   battery.addEventListener("chargingchange", setBattery);
 } else {
-  document.getElementById("batteryText").innerText = "N/A";
-  document.getElementById("batteryBar").style.width = "0%";
+  if (batteryText) batteryText.innerText = "N/A";
+  if (batteryBar) batteryBar.style.width = "0%";
 }
 ```
 
 } catch (error) {
-document.getElementById("batteryText").innerText = "N/A";
-document.getElementById("batteryBar").style.width = "0%";
+const batteryText = document.getElementById("batteryText");
+const batteryBar = document.getElementById("batteryBar");
+
+```
+if (batteryText) batteryText.innerText = "N/A";
+if (batteryBar) batteryBar.style.width = "0%";
+```
+
 }
 }
 
@@ -623,14 +671,11 @@ let glassesCharacteristic = null;
 let glassesTxCharacteristic = null;
 let glassesConnected = false;
 
-// These UUIDs must match the ESP32 Arduino code
 const EDITH_SERVICE_UUID = "7b3f0001-2a6d-4a4e-9b8b-ed1700000001";
 const EDITH_RX_CHARACTERISTIC_UUID = "7b3f0002-2a6d-4a4e-9b8b-ed1700000002";
 const EDITH_TX_CHARACTERISTIC_UUID = "7b3f0003-2a6d-4a4e-9b8b-ed1700000003";
 
-// Format: country code + number, no + sign, no spaces.
-// Example: 919876543210
-const EMERGENCY_PHONE_NUMBER = "9963296459";
+const EMERGENCY_PHONE_NUMBER = "91XXXXXXXXXX";
 
 async function connectGlasses() {
 try {
@@ -702,13 +747,9 @@ return;
 if (command === "SOS_TRIGGERED") {
 responseBox.innerText = "Emergency triggered from EDITH button.";
 listenStatus.innerText = "SOS Triggered";
-
-```
 input.value = "Jarvis activate emergency";
 sendMessage();
 return;
-```
-
 }
 
 if (command === "EDITH_SLEEP") {
@@ -775,11 +816,10 @@ await sendToGlasses("SOS");
 
 try {
 const position = await getCurrentLocation();
-
-```
 const latitude = position.coords.latitude;
 const longitude = position.coords.longitude;
 
+```
 openWhatsAppSOS(latitude, longitude);
 ```
 
@@ -791,7 +831,7 @@ const message = encodeURIComponent(
   "EMERGENCY ALERT from EDITH.\nI may need help.\nLocation could not be detected."
 );
 
-window.open(`https://wa.me/${EMERGENCY_PHONE_NUMBER}?text=${message}`, "_blank");
+window.open("https://wa.me/" + EMERGENCY_PHONE_NUMBER + "?text=" + message, "_blank");
 ```
 
 }
@@ -816,15 +856,16 @@ navigator.geolocation.getCurrentPosition(resolve, reject, {
 }
 
 function openWhatsAppSOS(latitude, longitude) {
-const locationLink = `https://maps.google.com/?q=${latitude},${longitude}`;
+const locationLink = "https://maps.google.com/?q=" + latitude + "," + longitude;
 
 const message = encodeURIComponent(
-`EMERGENCY ALERT from EDITH.\n` +
-`I may need help.\n` +
-`My current location:\n${locationLink}`
+"EMERGENCY ALERT from EDITH.\n" +
+"I may need help.\n" +
+"My current location:\n" +
+locationLink
 );
 
-window.open(`https://wa.me/${EMERGENCY_PHONE_NUMBER}?text=${message}`, "_blank");
+window.open("https://wa.me/" + EMERGENCY_PHONE_NUMBER + "?text=" + message, "_blank");
 }
 
 const connectBtn = document.getElementById("connectGlassesBtn");
@@ -833,3 +874,6 @@ if (connectBtn) {
 connectBtn.innerText = "Connect EDITH";
 connectBtn.addEventListener("click", connectGlasses);
 }
+
+console.log("JARVIS script loaded successfully.");
+
