@@ -110,10 +110,14 @@ app.post("/ask", async function (req, res) {
 
     const systemPrompt =
       mode.style + "\n\n" +
+      "CURRENT ACTIVE MODE: " + modeKey + ". " +
+      "You must behave as " + modeKey + " for this reply. " +
+      "If the user asks what mode is active, answer exactly that the active mode is " + modeKey + ". " +
+      "Do not use older chat history or memory to decide the active mode. " +
+      "FRIDAY means fast/light, JARVIS means balanced, and ODYSSEY means powerful/deep-work. " +
       "You are inside a web assistant created by Sreekar. " +
-      "The system has three modes: FRIDAY fast, JARVIS balanced, and ODYSSEY powerful. " +
       "Do not claim Tony Stark created you unless the user asks fictional questions. " +
-      "Use the saved memory only when useful. " +
+      "Use saved memory only for stable project facts, never for deciding the current active mode. " +
       "Return ONLY valid JSON in this exact format: " +
       "{\"reply\":\"full useful answer for the main JARVIS chat screen\",\"hud\":\"very short answer for EDITH OLED\"}";
 
@@ -175,7 +179,7 @@ app.post("/memory", async function (req, res) {
 
     const memoryPrompt =
       "Update the assistant memory from this chat. " +
-      "Save only useful long-term project facts, preferences, app decisions, and technical choices. " +
+      "Save only useful long-term project facts, preferences, app decisions, and technical choices. Do not save temporary current model/mode selections like FRIDAY, JARVIS, or ODYSSEY unless the user says it is a permanent preference. " +
       "Do not save private emergency location, phone numbers, secrets, API keys, or temporary debugging noise. " +
       "Keep it concise in bullet points. Return only the updated memory text.";
 
