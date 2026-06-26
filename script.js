@@ -236,7 +236,7 @@ const lower = String(message || "").toLowerCase();
 
 if (isEmergencyCommand(message)) {
 sendToVirtualOled("SOS ACTIVE");
-openWhatsAppSOS();
+await openWhatsAppSOS();
 
 
 return {
@@ -556,19 +556,13 @@ sendToVirtualOled("EDITH READY\nBluetooth later");
 console.log("JARVIS stable script with WhatsApp SOS loaded.");
 
 async function openWhatsAppSOS() {
-  const sosTab = window.open("", "_blank");
-
   let locationText = "Location could not be detected.";
 
   try {
-    if (!navigator.geolocation) {
-      throw new Error("Geolocation not supported");
-    }
-
     const position = await new Promise(function (resolve, reject) {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 15000,
         maximumAge: 0
       });
     });
@@ -580,6 +574,7 @@ async function openWhatsAppSOS() {
       "My current location:\n" +
       "https://maps.google.com/?q=" + latitude + "," + longitude;
   } catch (error) {
+    alert("Location failed: " + error.message);
     console.error("Location error:", error);
   }
 
@@ -590,16 +585,9 @@ async function openWhatsAppSOS() {
     locationText
   );
 
-  const url =
-    "https://wa.me/" +
-    EMERGENCY_PHONE_NUMBER +
-    "?text=" +
-    message;
-
-  if (sosTab) {
-    sosTab.location.href = url;
-  } else {
-    window.location.href = url;
-  }
+  window.open(
+    "https://wa.me/" + EMERGENCY_PHONE_NUMBER + "?text=" + message,
+    "_blank"
+  );
 }
 
