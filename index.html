@@ -1,125 +1,125 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JARVIS</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=201" />
 </head>
 <body>
-
-<div class="app">
-
-  <aside class="sidebar">
-    <div class="logo-box">
-      <div class="logo-circle">J.A.R.V.I.S</div>
-    </div>
-
-
-<button class="nav-btn active">Home</button>
-<button class="nav-btn">Chat</button>
-<button class="nav-btn" id="voiceBtn">Voice: Deep</button>
-<button class="nav-btn">Vision</button>
-<button class="nav-btn">System</button>
-<button class="nav-btn">Memory</button>
-<button class="nav-btn">Tools</button>
-<button class="nav-btn">Settings</button>
-
-<div class="listening-box">
-  <span id="listenStatus">System Ready</span>
-</div>
-
-
-  </aside>
-
-  <main class="main">
-    <section class="center-panel">
-      <div class="hud-ring">
-        <div class="hud-content">
-          <h1>HELLO</h1>
-          <p>How can I help you today?</p>
-
-
-      <div class="chat-bar">
-        <input id="commandInput" type="text" placeholder="Ask me anything..." />
-        <button id="micBtn">MIC</button>
-        <button id="muteBtn">MUTE</button>
-        <button id="sendBtn">SEND</button>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">J</div>
+        <div>
+          <h1>J.A.R.V.I.S</h1>
+          <p>AI Assistant</p>
+        </div>
       </div>
 
-      <div id="responseBox">JARVIS online. Awaiting command...</div>
-    </div>
+      <nav class="nav-list">
+        <button class="nav-item active">⌂ <span>Home</span></button>
+        <button class="nav-item">◌ <span>Chat</span></button>
+        <button class="nav-item" id="voiceBtn">≋ <span>Voice: Deep</span></button>
+        <button class="nav-item">◉ <span>Vision</span></button>
+        <button class="nav-item">▣ <span>System</span></button>
+        <button class="nav-item">◎ <span>Memory</span></button>
+        <button class="nav-item">⚒ <span>Tools</span></button>
+        <button class="nav-item">⚙ <span>Settings</span></button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <button class="connect-btn" id="connectGlassesBtn">Connect EDITH</button>
+        <div class="online-card">
+          <div class="small-avatar">J</div>
+          <div>
+            <strong>JARVIS</strong>
+            <p><span></span> Online</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <section class="hero">
+        <p class="eyebrow">Personal AI System</p>
+        <h2>Hello.</h2>
+        <p>How can I help you today?</p>
+      </section>
+
+      <section class="chat-panel">
+        <div class="chat-header">
+          <div>
+            <h3>JARVIS Chat</h3>
+            <p id="listenStatus">System Active</p>
+          </div>
+          <div class="time-pill">
+            <span id="time">00:00</span>
+            <small id="date">Loading...</small>
+          </div>
+        </div>
+
+        <div class="chat-scroll">
+          <div class="message assistant">
+            <div class="avatar">J</div>
+            <div class="message-content">
+              <div class="message-meta">
+                <strong>JARVIS</strong>
+                <span>Now</span>
+              </div>
+              <p>How can I assist you today?</p>
+            </div>
+          </div>
+
+          <div class="message assistant response-message">
+            <div class="avatar">J</div>
+            <div class="message-content">
+              <div class="message-meta">
+                <strong>Response</strong>
+                <span>Live</span>
+              </div>
+              <p id="responseBox">Ready when you are.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="input-section">
+        <div class="input-bar">
+          <input id="commandInput" type="text" placeholder="Ask JARVIS anything..." autocomplete="off" />
+          <button id="micBtn">MIC</button>
+          <button id="muteBtn">MUTE</button>
+          <button id="sendBtn">SEND</button>
+        </div>
+
+        <div class="quick-grid">
+          <button data-action="google">🌐 Web Search</button>
+          <button data-action="youtube">▶ YouTube</button>
+          <button data-action="weather">☁ Weather</button>
+          <button data-action="calculator">🧮 Calculator</button>
+          <button data-action="netflix">N Netflix</button>
+          <button data-action="swiggy">🍽 Swiggy</button>
+          <button onclick="document.getElementById('commandInput').value='activate emergency'; document.getElementById('sendBtn').click();" class="danger">🚨 Emergency SOS</button>
+        </div>
+      </section>
+
+      <div class="virtual-oled" id="virtualOled">
+        JARVIS ONLINE<br>
+        Awaiting command...
+      </div>
+
+      <div class="hidden-status">
+        <span id="cpuText">0%</span>
+        <span id="ramText">0%</span>
+        <span id="batteryText">0%</span>
+        <div id="cpuBar"></div>
+        <div id="ramBar"></div>
+        <div id="batteryBar"></div>
+      </div>
+    </main>
   </div>
-</section>
 
-
-  </main>
-
-  <aside class="right-panel">
-    <div class="card clock-card">
-      <h2 id="time">00:00</h2>
-      <p id="date">Loading...</p>
-    </div>
-
-
-<div class="card">
-  <h3>SYSTEM STATUS</h3>
-
-  <div class="stat">
-    <span>CPU</span>
-    <div class="bar">
-      <div id="cpuBar" style="width:0%"></div>
-    </div>
-    <b id="cpuText">0%</b>
-  </div>
-
-  <div class="stat">
-    <span>RAM</span>
-    <div class="bar">
-      <div id="ramBar" style="width:0%"></div>
-    </div>
-    <b id="ramText">0%</b>
-  </div>
-
-  <div class="stat">
-    <span>BATTERY</span>
-    <div class="bar">
-      <div id="batteryBar" style="width:0%"></div>
-    </div>
-    <b id="batteryText">...</b>
-  </div>
-</div>
-
-<div class="card">
-  <h3>QUICK ACCESS</h3>
-
-  <div class="quick-grid">
-    <button data-action="google">Web Search</button>
-    <button data-action="youtube">YouTube</button>
-    <button data-action="netflix">Netflix</button>
-    <button data-action="swiggy">Swiggy</button>
-    <button data-action="weather">Weather</button>
-    <button data-action="calculator">Calculator</button>
-    <button id="connectGlassesBtn">Connect EDITH</button>
-  </div>
-</div>
-
-<div class="card">
-  <h3>VIRTUAL GLASSES OLED</h3>
-
-  <div class="virtual-oled" id="virtualOled">
-    E.D.I.T.H ONLINE<br>
-    Awaiting command...
-  </div>
-</div>
-
-
-  </aside>
-
-</div>
-
-<script src="script.js?v=101"></script>
-
+  <script src="script.js?v=201"></script>
+  <script src="ui.js?v=1"></script>
 </body>
 </html>
