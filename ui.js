@@ -191,7 +191,7 @@
 
       if (text.includes("home")) openChat();
       else if (text.includes("chat")) openChat();
-      else if (text.includes("voice")) cycleVoice();
+      else if (text.includes("voice")) return;
       else if (text.includes("vision")) openPage("Vision", "Vision features can be added later.", '<div class="panel-card"><h3>Vision</h3><p>Camera/image input will be added later.</p></div>');
       else if (text.includes("system")) openSystem();
       else if (text.includes("memory")) openMemory();
