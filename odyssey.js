@@ -1,5 +1,6 @@
 (function () {
-  const CHAT_KEY = "jarvis_chat_history";
+  const CHATS_KEY = "jarvis_saved_chats_v2";
+  const ACTIVE_KEY = "jarvis_active_chat_v2";
   const MEMORY_KEY = "jarvis_memory";
   const MODEL_KEY = "jarvis_selected_model";
 
@@ -12,10 +13,86 @@
 
   if (!input || !sendBtn || !chatScroll || !inputBar) return;
 
-  let odysseyProcessing = false;
-  let chatHistory = loadChatHistory();
+  let isSending = false;
+  let chats = loadChats();
+  let activeChatId = localStorage.getItem(ACTIVE_KEY);
 
-  function createModelSelector() {
+  function makeId() {
+    return "chat_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+  }
+
+  function loadChats() {
+    try {
+      const data = JSON.parse(localStorage.getItem(CHATS_KEY) || "[]");
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveChats() {
+    localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+    localStorage.setItem(ACTIVE_KEY, activeChatId);
+  }
+
+  function getChat(id) {
+    return chats.find(function (chat) {
+      return chat.id === id;
+    });
+  }
+
+  function createNewChat() {
+    const chat = {
+      id: makeId(),
+      title: "New chat",
+      pinned: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      messages: []
+    };
+
+    chats.unshift(chat);
+    activeChatId = chat.id;
+    saveChats();
+    renderActiveChat();
+
+    return chat;
+  }
+
+  if (!activeChatId || !getChat(activeChatId)) {
+    createNewChat();
+  }
+
+  function getActiveChat() {
+    let chat = getChat(activeChatId);
+
+    if (!chat) {
+      chat = createNewChat();
+    }
+
+    return chat;
+  }
+
+  function makeTitle(text) {
+    const clean = String(text || "New chat").replace(/\s+/g, " ").trim();
+    if (!clean) return "New chat";
+    return clean.length > 40 ? clean.slice(0, 40) + "..." : clean;
+  }
+
+  function getSelectedMode() {
+    const selector = document.getElementById("modelSelect");
+    return selector ? selector.value : "JARVIS";
+  }
+
+  function getMemory() {
+    return localStorage.getItem(MEMORY_KEY) || "";
+  }
+
+  function saveMemory(memory) {
+    localStorage.setItem(MEMORY_KEY, memory || "");
+  }
+
+  function ensureModelSelector() {
     let selector = document.getElementById("modelSelect");
 
     if (!selector) {
@@ -33,102 +110,78 @@
 
     selector.value = localStorage.getItem(MODEL_KEY) || "JARVIS";
 
-    selector.addEventListener("change", function () {
+    selector.onchange = function () {
       localStorage.setItem(MODEL_KEY, selector.value);
-      addSystemLine("Model switched to " + selector.value + ".");
-      if (typeof setStatus === "function") {
-        setStatus(selector.value + " Mode");
-      }
-    });
-
-    return selector;
+      setStatusLine("Model switched to " + selector.value + ".");
+      if (typeof setStatus === "function") setStatus(selector.value + " Active");
+    };
   }
 
-  const modelSelect = createModelSelector();
-
-  if (micBtn) {
-    micBtn.innerHTML = "🎙";
-    micBtn.title = "Voice input";
-    micBtn.setAttribute("aria-label", "Voice input");
-  }
-
-  sendBtn.innerHTML = "↑";
-  sendBtn.title = "Send";
-  sendBtn.setAttribute("aria-label", "Send");
-
-  function loadChatHistory() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(CHAT_KEY) || "[]");
-      return Array.isArray(saved) ? saved : [];
-    } catch (error) {
-      return [];
-    }
-  }
-
-  function saveChatHistory() {
-    const trimmed = chatHistory.slice(-80);
-    chatHistory = trimmed;
-    localStorage.setItem(CHAT_KEY, JSON.stringify(trimmed));
-  }
-
-  function getMemory() {
-    return localStorage.getItem(MEMORY_KEY) || "";
-  }
-
-  function saveMemory(memory) {
-    localStorage.setItem(MEMORY_KEY, memory || "");
-  }
-
-  function clearChatPanel() {
+  function clearChatDom() {
     chatScroll.innerHTML = "";
   }
 
-  function addMessage(role, content, save) {
-    const message = document.createElement("div");
-    message.className = "message " + (role === "user" ? "user" : "assistant");
+  function createMessageElement(role, content, mode) {
+    const wrap = document.createElement("div");
+    wrap.className = "message " + (role === "user" ? "user" : "assistant");
 
     const avatar = document.createElement("div");
     avatar.className = "avatar";
     avatar.textContent = role === "user" ? "U" : "J";
 
-    const card = document.createElement("div");
-    card.className = "message-content";
+    const body = document.createElement("div");
+    body.className = "message-content";
 
     const meta = document.createElement("div");
     meta.className = "message-meta";
 
     const name = document.createElement("strong");
-    name.textContent = role === "user" ? "You" : getSelectedMode();
+    name.textContent = role === "user" ? "You" : (mode || getSelectedMode());
 
     const time = document.createElement("span");
     time.textContent = "Now";
 
-    const text = document.createElement("p");
-    text.textContent = content;
+    const p = document.createElement("p");
+    p.textContent = content;
 
     meta.appendChild(name);
     meta.appendChild(time);
-    card.appendChild(meta);
-    card.appendChild(text);
-    message.appendChild(avatar);
-    message.appendChild(card);
-    chatScroll.appendChild(message);
+    body.appendChild(meta);
+    body.appendChild(p);
 
+    wrap.appendChild(avatar);
+    wrap.appendChild(body);
+
+    return wrap;
+  }
+
+  function appendMessage(role, content, save, mode) {
+    const el = createMessageElement(role, content, mode);
+    chatScroll.appendChild(el);
     chatScroll.scrollTop = chatScroll.scrollHeight;
 
     if (save) {
-      chatHistory.push({
+      const chat = getActiveChat();
+
+      chat.messages.push({
         role: role,
         content: content,
+        mode: mode || (role === "assistant" ? getSelectedMode() : "USER"),
         time: Date.now()
       });
-      saveChatHistory();
+
+      if (role === "user" && chat.title === "New chat") {
+        chat.title = makeTitle(content);
+      }
+
+      chat.updatedAt = Date.now();
+      saveChats();
     }
 
-    return message;
+    return el;
   }
 
-  function addSystemLine(text) {
+  function setStatusLine(text) {
     const line = document.createElement("div");
     line.className = "model-status-line";
     line.textContent = text;
@@ -136,98 +189,91 @@
     chatScroll.scrollTop = chatScroll.scrollHeight;
   }
 
-  function renderChatHistory() {
-    clearChatPanel();
+  function renderActiveChat() {
+    clearChatDom();
 
-    addMessage("assistant", "How can I assist you today?", false);
+    const chat = getActiveChat();
 
-    chatHistory.forEach(function (item) {
-      addMessage(item.role, item.content, false);
+    if (!chat.messages || chat.messages.length === 0) {
+      appendMessage("assistant", "How can I assist you today?", false, "JARVIS");
+      if (responseBox) responseBox.innerText = "Ready when you are.";
+      return;
+    }
+
+    chat.messages.forEach(function (msg) {
+      appendMessage(msg.role, msg.content, false, msg.mode);
     });
 
-    if (chatHistory.length === 0) {
-      if (responseBox) responseBox.innerText = "Ready when you are.";
-    } else {
-      const lastAssistant = chatHistory.slice().reverse().find(function (item) {
-        return item.role === "assistant";
-      });
-      if (responseBox && lastAssistant) responseBox.innerText = lastAssistant.content;
+    const lastAssistant = chat.messages.slice().reverse().find(function (msg) {
+      return msg.role === "assistant";
+    });
+
+    if (responseBox && lastAssistant) {
+      responseBox.innerText = lastAssistant.content;
     }
   }
 
-  function getSelectedMode() {
-    return modelSelect ? modelSelect.value : "JARVIS";
-  }
-
   async function updateMemoryIfNeeded() {
-    const userCount = chatHistory.filter(function (item) {
-      return item.role === "user";
-    }).length;
+    const chat = getActiveChat();
+    const userMessages = chat.messages.filter(function (m) {
+      return m.role === "user";
+    });
 
-    if (userCount === 0 || userCount % 5 !== 0) return;
+    if (userMessages.length === 0 || userMessages.length % 5 !== 0) return;
 
     try {
-      addSystemLine("Updating memory...");
+      setStatusLine("Updating memory...");
+
+      const recent = chat.messages.slice(-10).map(function (m) {
+        return { role: m.role, content: m.content };
+      });
 
       const res = await fetch("/memory", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          memory: getMemory(),
-          history: chatHistory.slice(-10)
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memory: getMemory(), history: recent })
       });
 
       const data = await res.json();
 
       if (res.ok && data.memory) {
         saveMemory(data.memory);
-        addSystemLine("Memory updated.");
-      } else {
-        addSystemLine("Memory update skipped.");
+        setStatusLine("Memory updated.");
       }
     } catch (error) {
       console.error("Memory update failed:", error);
-      addSystemLine("Memory update failed.");
     }
   }
 
-  async function sendOdysseyMessage() {
-    if (odysseyProcessing) return;
+  async function sendJarvisMessage() {
+    if (isSending) return;
 
     const message = input.value.trim();
     if (!message) return;
 
-    odysseyProcessing = true;
+    isSending = true;
     input.value = "";
 
-    addMessage("user", message, true);
+    const selectedMode = getSelectedMode();
 
-    const thinking = addMessage("assistant", getSelectedMode() + " is thinking...", false);
+    appendMessage("user", message, true, "USER");
 
-    if (typeof setStatus === "function") {
-      setStatus(getSelectedMode() + " Thinking...");
-    }
+    const thinking = appendMessage("assistant", selectedMode + " is thinking...", false, selectedMode);
 
     try {
-      const historyPayload = chatHistory.slice(-12).map(function (item) {
-        return {
-          role: item.role,
-          content: item.content
-        };
+      const chat = getActiveChat();
+
+      const history = chat.messages.slice(-12).map(function (m) {
+        return { role: m.role, content: m.content };
       });
 
       const res = await fetch("/ask", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: message,
-          mode: getSelectedMode(),
-          history: historyPayload,
+          mode: selectedMode,
+          history: history,
           memory: getMemory()
         })
       });
@@ -243,67 +289,97 @@
       const reply = data.reply || "No response.";
       const hud = data.hud || reply.slice(0, 60);
 
-      addMessage("assistant", reply, true);
+      appendMessage("assistant", reply, true, selectedMode);
 
       if (responseBox) responseBox.innerText = reply;
-
-      if (typeof sendToVirtualOled === "function") {
-        sendToVirtualOled(hud);
-      }
-
-      if (typeof speak === "function") {
-        speak(reply);
-      }
-
-      if (typeof setStatus === "function") {
-        setStatus(getSelectedMode() + " Active");
-      }
+      if (typeof sendToVirtualOled === "function") sendToVirtualOled(hud);
+      if (typeof speak === "function") speak(reply);
+      if (typeof setStatus === "function") setStatus(selectedMode + " Active");
 
       updateMemoryIfNeeded();
     } catch (error) {
       thinking.remove();
-
-      const errorText = "Error: " + error.message;
-      addMessage("assistant", errorText, true);
-
-      if (responseBox) responseBox.innerText = errorText;
-
-      if (typeof setStatus === "function") {
-        setStatus("Error");
-      }
+      appendMessage("assistant", "Error: " + error.message, true, selectedMode);
     } finally {
-      odysseyProcessing = false;
+      isSending = false;
     }
   }
+
+  ensureModelSelector();
+
+  if (micBtn) {
+    micBtn.innerHTML = "🎙";
+  }
+
+  sendBtn.innerHTML = "↑";
 
   sendBtn.addEventListener("click", function (event) {
     event.preventDefault();
     event.stopImmediatePropagation();
-    sendOdysseyMessage();
+    sendJarvisMessage();
   }, true);
 
   input.addEventListener("keydown", function (event) {
     if (event.key === "Enter") {
       event.preventDefault();
       event.stopImmediatePropagation();
-      sendOdysseyMessage();
+      sendJarvisMessage();
     }
   }, true);
 
-  try {
-    window.sendMessage = sendOdysseyMessage;
-    sendMessage = sendOdysseyMessage;
-  } catch (error) {}
+  window.jarvisCreateNewChat = function () {
+    return createNewChat();
+  };
+
+  window.jarvisLoadChat = function (id) {
+    if (!getChat(id)) return;
+    activeChatId = id;
+    saveChats();
+    renderActiveChat();
+  };
+
+  window.jarvisDeleteChat = function (id) {
+    chats = chats.filter(function (chat) {
+      return chat.id !== id;
+    });
+
+    if (!chats.length) {
+      createNewChat();
+      return;
+    }
+
+    if (activeChatId === id) {
+      activeChatId = chats[0].id;
+    }
+
+    saveChats();
+    renderActiveChat();
+  };
+
+  window.jarvisPinChat = function (id) {
+    const chat = getChat(id);
+    if (!chat) return;
+    chat.pinned = !chat.pinned;
+    chat.updatedAt = Date.now();
+    saveChats();
+  };
+
+  window.jarvisGetChats = function () {
+    return chats;
+  };
 
   window.jarvisClearSavedChat = function () {
-    chatHistory = [];
-    saveChatHistory();
-    renderChatHistory();
+    const chat = getActiveChat();
+    chat.messages = [];
+    chat.title = "New chat";
+    chat.updatedAt = Date.now();
+    saveChats();
+    renderActiveChat();
   };
 
-  window.jarvisGetMemory = function () {
-    return getMemory();
+  window.jarvisOpenActiveChat = function () {
+    renderActiveChat();
   };
 
-  renderChatHistory();
+  renderActiveChat();
 })();
