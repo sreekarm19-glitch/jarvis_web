@@ -137,7 +137,7 @@
         const del = document.createElement("button");
         del.textContent = "Delete";
         del.onclick = function () {
-          if (!confirm("Delete this chat?")) return;
+          
           if (window.jarvisDeleteChat) window.jarvisDeleteChat(chat.id);
           renderMemory();
         };

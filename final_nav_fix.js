@@ -114,7 +114,7 @@
     }
 
     function deleteChat(id) {
-      if (!confirm("Delete this chat?")) return;
+      
 
       if (window.jarvisDeleteChat) {
         window.jarvisDeleteChat(id);
