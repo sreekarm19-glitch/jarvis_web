@@ -40,7 +40,9 @@
     if (window.jarvisCreateNewChat) {
       window.jarvisCreateNewChat();
     }
+
     showChat("chat");
+
     const input = document.getElementById("commandInput");
     if (input) input.focus();
   }
@@ -55,7 +57,27 @@
 
   function formatDate(time) {
     if (!time) return "";
-    return new Date(time).toLocaleDateString([], { month: "short", day: "numeric" });
+    return new Date(time).toLocaleDateString([], {
+      month: "short",
+      day: "numeric"
+    });
+  }
+
+  function renderPage(name, title, subtitle, body) {
+    if (hero) hero.style.display = "none";
+    if (chatPanel) chatPanel.style.display = "none";
+    if (inputSection) inputSection.style.display = "none";
+
+    pageView.style.display = "block";
+    setActive(name);
+
+    pageView.innerHTML =
+      '<div class="page-title">' +
+        '<p>JARVIS MODULE</p>' +
+        '<h2>' + title + '</h2>' +
+        '<span>' + subtitle + '</span>' +
+      '</div>' +
+      body;
   }
 
   function renderMemory() {
@@ -67,13 +89,13 @@
     setActive("memory");
 
     const chats = window.jarvisGetChats ? window.jarvisGetChats() : [];
-    const pinned = chats.filter(c => c.pinned);
-    const recents = chats.filter(c => !c.pinned);
+    const pinned = chats.filter(function (c) { return c.pinned; });
+    const recents = chats.filter(function (c) { return !c.pinned; });
 
     pageView.innerHTML =
       '<div class="memory-chat-page-final">' +
         '<div class="memory-chat-top-final">' +
-          '<div><h2>Chats</h2><p>Auto-saved JARVIS conversations</p></div>' +
+          '<div><h2>Chats</h2></div>' +
           '<button id="newChatFromMemory">＋ New Chat</button>' +
         '</div>' +
         '<div class="memory-chat-section-final"><h3>Pinned</h3><div id="pinnedList"></div></div>' +
@@ -134,25 +156,109 @@
     document.getElementById("newChatFromMemory").onclick = newChat;
   }
 
-  function renderSimple(name, title, body) {
-    if (hero) hero.style.display = "none";
-    if (chatPanel) chatPanel.style.display = "none";
-    if (inputSection) inputSection.style.display = "none";
+  async function renderSystem() {
+    const cpuText = document.getElementById("cpuText");
+    const ramText = document.getElementById("ramText");
+    const batteryText = document.getElementById("batteryText");
 
-    pageView.style.display = "block";
-    setActive(name);
+    const cpu = cpuText ? cpuText.innerText : "N/A";
+    const ram = ramText ? ramText.innerText : "N/A";
+    const battery = batteryText ? batteryText.innerText : "N/A";
 
-    pageView.innerHTML =
-      '<div class="page-title"><p>JARVIS MODULE</p><h2>' + title + '</h2></div>' +
-      body;
+    renderPage(
+      "system",
+      "System",
+      "Status, EDITH connection, and emergency controls.",
+      '<div class="page-grid">' +
+        '<div class="panel-card"><h3>CPU</h3><strong>' + cpu + '</strong><p>Current server activity.</p></div>' +
+        '<div class="panel-card"><h3>RAM</h3><strong>' + ram + '</strong><p>Memory usage.</p></div>' +
+        '<div class="panel-card"><h3>Battery</h3><strong>' + battery + '</strong><p>Browser device battery.</p></div>' +
+        '<div class="panel-card"><h3>EDITH</h3><p>Connect your wearable HUD device.</p><button class="panel-btn" id="systemConnectEdith">Connect EDITH</button></div>' +
+        '<div class="panel-card"><h3>JARVIS</h3><p>AI server and chat interface are active.</p><button class="panel-btn" id="systemRefreshStatus">Refresh Status</button></div>' +
+        '<div class="panel-card"><h3>Emergency</h3><p>Open WhatsApp SOS with location.</p><button class="panel-btn danger-text" id="systemSos">Test SOS</button></div>' +
+      '</div>'
+    );
+
+    document.getElementById("systemConnectEdith").onclick = function () {
+      const connect = document.getElementById("connectGlassesBtn");
+      if (connect) connect.click();
+    };
+
+    document.getElementById("systemRefreshStatus").onclick = function () {
+      if (typeof updateSystemStatus === "function") {
+        updateSystemStatus();
+      }
+      renderSystem();
+    };
+
+    document.getElementById("systemSos").onclick = function () {
+      showChat("home");
+      const input = document.getElementById("commandInput");
+      const send = document.getElementById("sendBtn");
+      if (input) input.value = "activate emergency";
+      if (send) send.click();
+    };
+  }
+
+  function renderTools() {
+    renderPage(
+      "tools",
+      "Tools",
+      "Quick actions and useful shortcuts.",
+      '<div class="tools-grid">' +
+        '<button class="tool-button" id="toolGoogle">🌐 Web Search</button>' +
+        '<button class="tool-button" id="toolYoutube">▶ YouTube</button>' +
+        '<button class="tool-button" id="toolWeather">☁ Weather</button>' +
+        '<button class="tool-button" id="toolCalculator">🧮 Calculator</button>' +
+        '<button class="tool-button" id="toolNetflix">N Netflix</button>' +
+        '<button class="tool-button" id="toolSwiggy">🍽 Swiggy</button>' +
+        '<button class="tool-button danger-text" id="toolSos">🚨 Emergency SOS</button>' +
+      '</div>'
+    );
+
+    document.getElementById("toolGoogle").onclick = function () {
+      window.open("https://google.com", "_blank");
+    };
+
+    document.getElementById("toolYoutube").onclick = function () {
+      window.open("https://youtube.com", "_blank");
+    };
+
+    document.getElementById("toolWeather").onclick = function () {
+      window.open("https://www.google.com/search?q=weather", "_blank");
+    };
+
+    document.getElementById("toolCalculator").onclick = function () {
+      window.open("https://www.google.com/search?q=calculator", "_blank");
+    };
+
+    document.getElementById("toolNetflix").onclick = function () {
+      window.open("https://netflix.com", "_blank");
+    };
+
+    document.getElementById("toolSwiggy").onclick = function () {
+      window.open("https://swiggy.com", "_blank");
+    };
+
+    document.getElementById("toolSos").onclick = function () {
+      showChat("home");
+      const input = document.getElementById("commandInput");
+      const send = document.getElementById("sendBtn");
+      if (input) input.value = "activate emergency";
+      if (send) send.click();
+    };
   }
 
   function renderSettings() {
-    renderSimple(
+    renderPage(
       "settings",
       "Settings",
+      "Control JARVIS behaviour.",
       '<div class="page-grid">' +
-        '<div class="panel-card"><h3>Chat</h3><p>Clear current chat.</p><button class="panel-btn" id="clearChat">Clear Chat</button></div>' +
+        '<div class="panel-card"><h3>Chat</h3><p>Clear the current active chat.</p><button class="panel-btn" id="clearChat">Clear Chat</button></div>' +
+        '<div class="panel-card"><h3>Model</h3><p>Reset model selector to JARVIS balanced mode.</p><button class="panel-btn" id="resetModel">Reset Model</button></div>' +
+        '<div class="panel-card"><h3>Audio</h3><p>Mute or unmute JARVIS voice output.</p><button class="panel-btn" id="settingsMute">Toggle Mute</button></div>' +
+        '<div class="panel-card"><h3>Memory</h3><p>Clear long-term browser memory summary only.</p><button class="panel-btn danger-text" id="clearMemoryOnly">Clear Memory</button></div>' +
       '</div>'
     );
 
@@ -160,6 +266,35 @@
       if (window.jarvisClearSavedChat) window.jarvisClearSavedChat();
       showChat("home");
     };
+
+    document.getElementById("resetModel").onclick = function () {
+      localStorage.setItem("jarvis_selected_model", "JARVIS");
+      const select = document.getElementById("modelSelect");
+      if (select) select.value = "JARVIS";
+      alert("Model reset to JARVIS.");
+    };
+
+    document.getElementById("settingsMute").onclick = function () {
+      const mute = document.getElementById("muteBtn");
+      if (mute) mute.click();
+    };
+
+    document.getElementById("clearMemoryOnly").onclick = function () {
+      localStorage.removeItem("jarvis_memory");
+      alert("Memory summary cleared.");
+    };
+  }
+
+  function renderVision() {
+    renderPage(
+      "vision",
+      "Vision",
+      "Camera and image features.",
+      '<div class="page-grid">' +
+        '<div class="panel-card"><h3>Image Analysis</h3><p>Upload or camera vision can be added later.</p><button class="panel-btn" disabled>Coming Soon</button></div>' +
+        '<div class="panel-card"><h3>EDITH Camera</h3><p>Future wearable vision support.</p><button class="panel-btn" disabled>Pending</button></div>' +
+      '</div>'
+    );
   }
 
   document.addEventListener("click", function (event) {
@@ -180,22 +315,22 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       renderMemory();
+    } else if (text.includes("vision")) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      renderVision();
+    } else if (text.includes("system")) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      renderSystem();
+    } else if (text.includes("tools")) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      renderTools();
     } else if (text.includes("settings")) {
       event.preventDefault();
       event.stopImmediatePropagation();
       renderSettings();
-    } else if (text.includes("vision")) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      renderSimple("vision", "Vision", '<div class="panel-card"><p>Vision will be added later.</p></div>');
-    } else if (text.includes("system")) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      renderSimple("system", "System", '<div class="panel-card"><p>System controls will be added here.</p></div>');
-    } else if (text.includes("tools")) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      renderSimple("tools", "Tools", '<div class="panel-card"><p>Tools will be added here.</p></div>');
     }
   }, true);
 })();
