@@ -5,16 +5,23 @@
     '<path d="M19 11a7 7 0 0 1-14 0M12 18v4M8 22h8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
     '</svg>';
 
-  const micOffIcon =
+  const speakerIcon =
     '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">' +
-    '<path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-5.4-1.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
-    '<path d="M9 9v2a3 3 0 0 0 4.4 2.7M19 11a7 7 0 0 1-10.8 5.9M5 11a7 7 0 0 0 7 7M12 18v4M8 22h8M3 3l18 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
+    '<path d="M4 9v6h4l5 4V5L8 9H4Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>' +
+    '<path d="M16 9.5c1 .9 1.5 1.7 1.5 2.5S17 13.6 16 14.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
+    '<path d="M18.5 7c1.8 1.6 2.8 3.2 2.8 5s-1 3.4-2.8 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
     '</svg>';
 
-  let polishMuted = false;
+  const speakerOffIcon =
+    '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">' +
+    '<path d="M4 9v6h4l5 4V5L8 9H4Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>' +
+    '<path d="M3 3l18 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
+    '</svg>';
+
+  let audioMuted = false;
 
   function setRealMuted(value) {
-    polishMuted = value;
+    audioMuted = value;
 
     try {
       isMuted = value;
@@ -32,7 +39,7 @@
     }
   }
 
-  function updateMicButtons() {
+  function updateAudioButtons() {
     const micBtn = document.getElementById("micBtn");
     const muteBtn = document.getElementById("muteBtn");
 
@@ -44,20 +51,20 @@
     }
 
     if (muteBtn) {
-      muteBtn.innerHTML = polishMuted ? micOffIcon : micIcon;
-      muteBtn.title = polishMuted ? "Unmute voice" : "Mute voice";
-      muteBtn.setAttribute("aria-label", polishMuted ? "Unmute voice" : "Mute voice");
+      muteBtn.innerHTML = audioMuted ? speakerOffIcon : speakerIcon;
+      muteBtn.title = audioMuted ? "Unmute speaker" : "Mute speaker";
+      muteBtn.setAttribute("aria-label", audioMuted ? "Unmute speaker" : "Mute speaker");
       muteBtn.classList.add("clean-round-icon");
 
-      if (polishMuted) {
-        muteBtn.classList.add("mic-muted");
+      if (audioMuted) {
+        muteBtn.classList.add("speaker-muted");
       } else {
-        muteBtn.classList.remove("mic-muted");
+        muteBtn.classList.remove("speaker-muted");
       }
     }
   }
 
-  function installMuteOverride() {
+  function installSpeakerOverride() {
     const muteBtn = document.getElementById("muteBtn");
     if (!muteBtn) return;
 
@@ -67,11 +74,11 @@
       event.preventDefault();
       event.stopImmediatePropagation();
 
-      setRealMuted(!polishMuted);
-      updateMicButtons();
+      setRealMuted(!audioMuted);
+      updateAudioButtons();
 
       if (typeof setStatus === "function") {
-        setStatus(polishMuted ? "Muted" : "System Active");
+        setStatus(audioMuted ? "Speaker Muted" : "Speaker Active");
       }
     }, true);
   }
@@ -88,8 +95,6 @@
         window.jarvisClearSavedChat();
       }
 
-      localStorage.removeItem("jarvis_chat_history");
-
       const responseBox = document.getElementById("responseBox");
       if (responseBox) {
         responseBox.innerText = "Ready when you are.";
@@ -98,16 +103,14 @@
       if (typeof sendToVirtualOled === "function") {
         sendToVirtualOled("JARVIS ONLINE\nAwaiting command...");
       }
-
-      alert("Chat cleared.");
     }, true);
   }
 
   cleanBrand();
   setRealMuted(false);
-  updateMicButtons();
-  installMuteOverride();
+  updateAudioButtons();
+  installSpeakerOverride();
   installClearChatFix();
 
-  window.jarvisRefreshPolish = updateMicButtons;
+  window.jarvisRefreshPolish = updateAudioButtons;
 })();
